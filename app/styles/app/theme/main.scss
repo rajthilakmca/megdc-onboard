@@ -1,0 +1,20 @@
+.mainColor {
+    background: $color-main;
+    color: #fff;
+}
+.mainColor:hover, .mainColor:focus, .mainColor.focus {
+    background: $color-offset;
+    color: #fff;
+}
+.mainColor-text {
+    color: $color-main;
+}
+.offsetColor-text {
+    color: $color-offset;
+}
+h1 {
+    font-size: 4em;
+}
+h2 {
+    font-size: 3.2em;
+}

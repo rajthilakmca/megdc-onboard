@@ -1,0 +1,54 @@
+.icon-block .material-icons {
+    font-size: inherit;
+}
+.has-feedback .form-control {
+    padding-right: 22.5px;
+    padding-left: 20px;
+    margin-bottom: 5px;
+}
+.help-block {
+    text-align:center;
+}
+span.form-control-feedback.updated {
+    position: absolute;
+    height: 40px;
+    line-height: 43px;
+    top: auto;
+    right: auto !important; 
+    display: inline;
+    width: auto;
+    height: 34px;
+}
+.main, .profile-view {
+    min-height: 68vh;
+}
+.footer {
+    padding: 20px 0 0;
+    background-color: #54a0c0;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    overflow: hidden;
+}
+.footer-copyright {
+    background-color: #3c738f;
+    min-height: 3vh;
+    color:white;
+}
+.footer a {
+   color: rgba(255,255,255,0.77);
+}
+.footer-title {
+    border-top: solid 4px rgba(255,255,255,0.77);
+    color: #fff;
+}
+.container.signin {
+    margin-top: 10vh;
+}
+.form-actions {
+    text-align:center;
+}
+.section#index-banner {
+    font-size: larger;
+}

@@ -1143,6 +1143,33 @@ define('meg/components/ember-wormhole', ['exports', 'ember-wormhole/components/e
     }
   });
 });
+define('meg/components/fa-icon', ['exports', 'ember-font-awesome/components/fa-icon'], function (exports, _emberFontAwesomeComponentsFaIcon) {
+  Object.defineProperty(exports, 'default', {
+    enumerable: true,
+    get: function get() {
+      return _emberFontAwesomeComponentsFaIcon['default'];
+    }
+  });
+});
+define('meg/components/fa-list', ['exports', 'ember-font-awesome/components/fa-list'], function (exports, _emberFontAwesomeComponentsFaList) {
+  Object.defineProperty(exports, 'default', {
+    enumerable: true,
+    get: function get() {
+      return _emberFontAwesomeComponentsFaList['default'];
+    }
+  });
+});
+define('meg/components/fa-stack', ['exports', 'ember-font-awesome/components/fa-stack'], function (exports, _emberFontAwesomeComponentsFaStack) {
+  Object.defineProperty(exports, 'default', {
+    enumerable: true,
+    get: function get() {
+      return _emberFontAwesomeComponentsFaStack['default'];
+    }
+  });
+});
+define('meg/components/form-control-feedback', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Component.extend({});
+});
 define('meg/components/frost-button', ['exports', 'ember-frost-core/components/frost-button'], function (exports, _emberFrostCoreComponentsFrostButton) {
   Object.defineProperty(exports, 'default', {
     enumerable: true,
@@ -1255,6 +1282,222 @@ define('meg/components/frost-textarea', ['exports', 'ember-frost-core/components
     }
   });
 });
+define('meg/components/gh-error-message', ['exports', 'ember'], function (exports, _ember) {
+    var Component = _ember['default'].Component;
+    var computed = _ember['default'].computed;
+    var isEmpty = _ember['default'].isEmpty;
+
+    /**
+     * Renders one random error message when passed a DS.Errors object
+     * and a property name. The message will be one of the ones associated with
+     * that specific property. If there are no errors associated with the property,
+     * nothing will be rendered.
+     * @param  {DS.Errors} errors   The DS.Errors object
+     * @param  {string} property    The property name
+     */
+    exports['default'] = Component.extend({
+        tagName: 'p',
+        classNames: ['response'],
+
+        errors: null,
+        property: '',
+
+        isVisible: computed.notEmpty('errors'),
+
+        message: computed('errors.[]', 'property', function () {
+            var property = this.get('property');
+            var errors = this.get('errors');
+            var messages = [];
+            var index = undefined;
+
+            if (!isEmpty(errors) && errors.get(property)) {
+                errors.get(property).forEach(function (error) {
+                    messages.push(error);
+                });
+                index = Math.floor(Math.random() * messages.length);
+                return messages[index].message;
+            }
+        })
+    });
+});
+define('meg/components/gh-form-group', ['exports', 'meg/components/gh-validation-status-container'], function (exports, _megComponentsGhValidationStatusContainer) {
+    exports['default'] = _megComponentsGhValidationStatusContainer['default'].extend({
+        classNames: 'form-group'
+    });
+});
+define('meg/components/gh-input', ['exports', 'ember', 'meg/mixins/text-input'], function (exports, _ember, _megMixinsTextInput) {
+    var TextField = _ember['default'].TextField;
+    exports['default'] = TextField.extend(_megMixinsTextInput['default'], {
+        classNames: 'gh-input'
+    });
+});
+define('meg/components/gh-spin-button', ['exports', 'ember'], function (exports, _ember) {
+    var Component = _ember['default'].Component;
+    var computed = _ember['default'].computed;
+    var observer = _ember['default'].observer;
+    var run = _ember['default'].run;
+    var equal = computed.equal;
+    exports['default'] = Component.extend({
+        tagName: 'button',
+        buttonText: '',
+        submitting: false,
+        showSpinner: false,
+        showSpinnerTimeout: null,
+        autoWidth: true,
+
+        // Disable Button when isLoading equals true
+        attributeBindings: ['disabled', 'type', 'tabindex'],
+
+        // Must be set on the controller
+        disabled: equal('showSpinner', true),
+
+        click: function click() {
+            if (this.get('action')) {
+                this.sendAction('action');
+                return false;
+            }
+            return true;
+        },
+
+        toggleSpinner: observer('submitting', function () {
+            var submitting = this.get('submitting');
+            var timeout = this.get('showSpinnerTimeout');
+
+            if (submitting) {
+                this.set('showSpinner', true);
+                this.set('showSpinnerTimeout', run.later(this, function () {
+                    if (!this.get('submitting')) {
+                        this.set('showSpinner', false);
+                    }
+                    this.set('showSpinnerTimeout', null);
+                }, 1000));
+            } else if (!submitting && timeout === null) {
+                this.set('showSpinner', false);
+            }
+        }),
+
+        setSize: observer('showSpinner', function () {
+            if (this.get('showSpinner') && this.get('autoWidth')) {
+                this.$().width(this.$().width());
+                this.$().height(this.$().height());
+            } else {
+                this.$().width('');
+                this.$().height('');
+            }
+        }),
+
+        willDestroy: function willDestroy() {
+            this._super.apply(this, arguments);
+            run.cancel(this.get('showSpinnerTimeout'));
+        }
+    });
+});
+define('meg/components/gh-trim-focus-input', ['exports', 'ember'], function (exports, _ember) {
+    var TextField = _ember['default'].TextField;
+    var computed = _ember['default'].computed;
+    exports['default'] = TextField.extend({
+        focus: true,
+        classNames: 'gh-input',
+        attributeBindings: ['autofocus'],
+
+        autofocus: computed(function () {
+            if (this.get('focus')) {
+                return device.ios() ? false : 'autofocus';
+            }
+
+            return false;
+        }),
+
+        _focusField: function _focusField() {
+            // This fix is required until Mobile Safari has reliable
+            // autofocus, select() or focus() support
+            if (this.get('focus') && !device.ios()) {
+                this.$().val(this.$().val()).focus();
+            }
+        },
+
+        _trimValue: function _trimValue() {
+            var text = this.$().val();
+            this.$().val(text.trim());
+        },
+
+        didInsertElement: function didInsertElement() {
+            this._super.apply(this, arguments);
+            this._focusField();
+        },
+
+        focusOut: function focusOut() {
+            this._super.apply(this, arguments);
+            this._trimValue();
+        }
+    });
+});
+/*global device*/
+define('meg/components/gh-validation-status-container', ['exports', 'ember', 'meg/mixins/validation-state'], function (exports, _ember, _megMixinsValidationState) {
+    var Component = _ember['default'].Component;
+    var computed = _ember['default'].computed;
+
+    /**
+     * Handles the CSS necessary to show a specific property state. When passed a
+     * DS.Errors object and a property name, if the DS.Errors object has errors for
+     * the specified property, it will change the CSS to reflect the error state
+     * @param  {DS.Errors} errors   The DS.Errors object
+     * @param  {string} property    Name of the property
+     */
+    exports['default'] = Component.extend(_megMixinsValidationState['default'], {
+        classNameBindings: ['errorClass'],
+
+        errorClass: computed('property', 'hasError', 'hasValidated.[]', function () {
+            var hasValidated = this.get('hasValidated');
+            var property = this.get('property');
+
+            if (hasValidated && hasValidated.contains(property)) {
+                return this.get('hasError') ? 'error' : 'success';
+            } else {
+                return '';
+            }
+        })
+    });
+});
+define('meg/components/host-info', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Component.extend({
+    flag: true,
+    isButtonVisible: true,
+
+    validate: function validate() {
+      this.set("flag", true);
+      if (_ember['default'].isBlank(this.get('model').get('ipaddress'))) {
+        this.notifications.error('Please enter an email');
+        this.set("flag", false);
+      }
+      if (_ember['default'].isBlank(this.get('model').get('username'))) {
+        this.notifications.error('Please enter an username');
+        this.set("flag", false);
+      }
+      if (_ember['default'].isBlank(this.get('model').get('password'))) {
+        this.notifications.error('Please enter a password');
+        this.set("flag", false);
+      }
+    },
+
+    actions: {
+      validateAndAuthenticate: function validateAndAuthenticate() {
+        this.validate();
+        if (this.get('flag')) {
+          this.set('isButtonVisible', false);
+          this.get('onConfirm')();
+        }
+      },
+      done: function done() {
+        this.validate();
+        if (this.get('flag')) {
+          this.get('onDone')();
+        }
+      }
+    }
+
+  });
+});
 define('meg/components/ivy-tab-list', ['exports', 'meg/components/em-components/ivy-tab-list'], function (exports, _megComponentsEmComponentsIvyTabList) {
   Object.defineProperty(exports, 'default', {
     enumerable: true,
@@ -1286,6 +1529,9 @@ define('meg/components/ivy-tabs', ['exports', 'meg/components/em-components/ivy-
       return _megComponentsEmComponentsIvyTabs['default'];
     }
   });
+});
+define('meg/components/material-form-label', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Component.extend({});
 });
 define('meg/components/meg-layout', ['exports', 'ember'], function (exports, _ember) {
   exports['default'] = _ember['default'].Component.extend({});
@@ -1691,6 +1937,14 @@ define('meg/components/popup-click-handler', ['exports', 'ember'], function (exp
     }
   });
 });
+define('meg/components/stagger-set', ['exports', 'ember-stagger-swagger/components/stagger-set'], function (exports, _emberStaggerSwaggerComponentsStaggerSet) {
+  Object.defineProperty(exports, 'default', {
+    enumerable: true,
+    get: function get() {
+      return _emberStaggerSwaggerComponentsStaggerSet['default'];
+    }
+  });
+});
 define('meg/components/transition-group', ['exports', 'ember-css-transitions/components/transition-group'], function (exports, _emberCssTransitionsComponentsTransitionGroup) {
   Object.defineProperty(exports, 'default', {
     enumerable: true,
@@ -1698,6 +1952,26 @@ define('meg/components/transition-group', ['exports', 'ember-css-transitions/com
       return _emberCssTransitionsComponentsTransitionGroup['default'];
     }
   });
+});
+define('meg/controllers/error', ['exports', 'ember'], function (exports, _ember) {
+    var Controller = _ember['default'].Controller;
+    var computed = _ember['default'].computed;
+    exports['default'] = Controller.extend({
+
+        stack: false,
+
+        code: computed('content.status', function () {
+            return this.get('content.status') > 200 ? this.get('content.status') : 500;
+        }),
+
+        message: computed('content.statusText', function () {
+            if (this.get('code') === 404) {
+                return 'Page not found';
+            }
+
+            return this.get('content.statusText') !== 'error' ? this.get('content.statusText') : 'Internal Server Error';
+        })
+    });
 });
 define('meg/controllers/flash', ['exports', 'ember'], function (exports, _ember) {
   exports['default'] = _ember['default'].Controller.extend({
@@ -1740,28 +2014,111 @@ define('meg/controllers/master', ['exports', 'ember'], function (exports, _ember
 define('meg/controllers/signin', ['exports', 'ember'], function (exports, _ember) {
   //import PostValidations from 'meg/mixins/validations';
 
-  exports['default'] = _ember['default'].Controller.extend({});
+  exports['default'] = _ember['default'].Controller.extend({
+    auth: _ember['default'].inject.service(),
+    ajax: _ember['default'].inject.service(),
+    errorMessage: null,
+
+    actions: {
+      LoginAccount: function LoginAccount() {
+        var _this = this;
+
+        this.get('auth').signIn();
+        return this.get('model').LoginAccount().then(function (result) {
+          this.transitionToRoute('main');
+        })['catch'](function (error) {
+          return _this.set('errorMessage', error.reason);
+        });
+      }
+
+    }
+  });
 });
 define('meg/controllers/signup', ['exports', 'ember'], function (exports, _ember) {
-	//import PostValidations from 'meg/mixins/validations';
+  //import PostValidations from 'meg/mixins/validations';
 
-	exports['default'] = _ember['default'].Controller.extend({
-		auth: _ember['default'].inject.service(),
-		ajax: _ember['default'].inject.service(),
+  exports['default'] = _ember['default'].Controller.extend({
+    auth: _ember['default'].inject.service(),
+    ajax: _ember['default'].inject.service(),
 
-		actions: {
-			createAccount: function createAccount() {
-				this.get('auth').signIn();
-				return this.get('model').createAccount().then(function (result) {
-					console.log("==============result=====================");
-					console.log(result);
-					this.transitionToRoute('master');
-				});
-			}
+    actions: {
+      createAccount: function createAccount() {
+        this.get('auth').signIn();
+        return this.get('model').createAccount().then(function (result) {
+          this.transitionToRoute('main');
+        });
+      }
 
-		}
+    }
 
-	});
+  });
+});
+define('meg/controllers/step1', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Controller.extend({
+    typeBeforeCompleteSelect: true,
+    typeBeforeMiniSelect: true,
+
+    actions: {
+      completeSelected: function completeSelected() {
+        this.set('typeBeforeCompleteSelect', false);
+        this.set('typeAfterCompleteSelect', true);
+        this.set('typeBeforeMiniSelect', true);
+        this.set('typeAfterMiniSelect', false);
+      },
+      miniSelected: function miniSelected() {
+        this.set('typeBeforeMiniSelect', false);
+        this.set('typeAfterMiniSelect', true);
+        this.set('typeBeforeCompleteSelect', true);
+        this.set('typeAfterCompleteSelect', false);
+      },
+      goto: function goto() {
+        this.transitionToRoute('step2');
+      }
+    }
+  });
+});
+define('meg/controllers/step2', ['exports', 'ember'], function (exports, _ember) {
+  var Controller = _ember['default'].Controller;
+  var service = _ember['default'].inject.service;
+  exports['default'] = Controller.extend({
+    hostinfos: service(),
+    storage: service(),
+    sessionStorage: service(),
+
+    hostInfos: [_ember['default'].Object.create({
+      ipaddress: '',
+      username: '',
+      password: ''
+    })],
+
+    storeData: function storeData(data, storage) {
+      return storage.setItem('megdc.hostinfos', JSON.stringify(data));
+    },
+
+    actions: {
+
+      addhost: function addhost() {
+        this.get('hostInfos').pushObject(_ember['default'].Object.create({
+          ipaddress: '',
+          username: '',
+          password: ''
+        }));
+      },
+
+      done: function done() {
+        //let data = this.get('hostinfos').create(this.get('hostInfos'));
+
+        //return this.get('hostinfos').create(this.get('hostInfos')).then(function(result) {
+        //  this.storeData(result, this.get('sessionStorage'));
+        this.transitionToRoute('step3');
+        //	});
+      }
+
+    }
+  });
+});
+define('meg/controllers/step3', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Controller.extend({});
 });
 define('meg/controllers/top', ['exports', 'ember'], function (exports, _ember) {
   //import config from 'meg/config/environment';
@@ -2054,6 +2411,19 @@ define("meg/initializers/ember-i18n", ["exports", "meg/instance-initializers/emb
     }
   };
 });
+define('meg/initializers/ember-simple-auth', ['exports', 'ember', 'meg/config/environment', 'ember-simple-auth/configuration', 'ember-simple-auth/initializers/setup-session', 'ember-simple-auth/initializers/setup-session-service'], function (exports, _ember, _megConfigEnvironment, _emberSimpleAuthConfiguration, _emberSimpleAuthInitializersSetupSession, _emberSimpleAuthInitializersSetupSessionService) {
+  exports['default'] = {
+    name: 'ember-simple-auth',
+    initialize: function initialize(registry) {
+      var config = _megConfigEnvironment['default']['ember-simple-auth'] || {};
+      config.baseURL = _megConfigEnvironment['default'].baseURL;
+      _emberSimpleAuthConfiguration['default'].load(config);
+
+      (0, _emberSimpleAuthInitializersSetupSession['default'])(registry);
+      (0, _emberSimpleAuthInitializersSetupSessionService['default'])(registry);
+    }
+  };
+});
 define('meg/initializers/export-application-global', ['exports', 'ember', 'meg/config/environment'], function (exports, _ember, _megConfigEnvironment) {
   exports.initialize = initialize;
 
@@ -2088,6 +2458,28 @@ define('meg/initializers/export-application-global', ['exports', 'ember', 'meg/c
     initialize: initialize
   };
 });
+define('meg/initializers/hostinfos', ['exports'], function (exports) {
+  // Generated by CoffeeScript 1.10.0
+  //import TestAuth from 'meg/utils/test-auth';
+  var HostInfosInitializer, initialize;
+
+  exports.initialize = initialize = function (app) {
+    app.inject('route', 'hostinfos', 'service:hostinfos');
+    app.inject('controller', 'hostinfos', 'service:hostinfos');
+    app.inject('application', 'hostinfos', 'service:hostinfos');
+    app.inject('component', 'hostinfos', 'service:hostinfos');
+    return app.inject('service:flashes', 'hostinfos', 'service:hostinfos');
+  };
+
+  HostInfosInitializer = {
+    name: 'hostinfos',
+    after: 'ember-data',
+    initialize: initialize
+  };
+
+  exports.initialize = initialize;
+  exports['default'] = HostInfosInitializer;
+});
 define('meg/initializers/injectStore', ['exports', 'ember'], function (exports, _ember) {
 
   /*
@@ -2109,11 +2501,8 @@ define('meg/initializers/notifications', ['exports', 'meg/services/notification-
 
         initialize: function initialize() {
             var application = arguments[1] || arguments[0];
-            console.log("-----------------------");
-            console.log(application);
             application.register('notification-messages:service', _megServicesNotificationMessagesService['default']);
-
-            ['controller', 'component', 'route', 'router', 'service'].forEach(function (injectionTarget) {
+            ['controller', 'component', 'route', 'router', 'service', 'validators'].forEach(function (injectionTarget) {
                 application.inject(injectionTarget, 'notifications', 'notification-messages:service');
             });
         }
@@ -2208,6 +2597,14 @@ define("meg/instance-initializers/ember-i18n", ["exports", "ember", "ember-i18n/
     }
   };
 });
+define('meg/instance-initializers/ember-simple-auth', ['exports', 'ember-simple-auth/instance-initializers/setup-session-restoration'], function (exports, _emberSimpleAuthInstanceInitializersSetupSessionRestoration) {
+  exports['default'] = {
+    name: 'ember-simple-auth',
+    initialize: function initialize(instance) {
+      (0, _emberSimpleAuthInstanceInitializersSetupSessionRestoration['default'])(instance);
+    }
+  };
+});
 define('meg/locales/en/translations', ['exports'], function (exports) {
   exports['default'] = {
     'landingpage': {
@@ -2236,31 +2633,36 @@ define('meg/locales/en/translations', ['exports'], function (exports) {
         sign_in: 'Sign in'
       }
     },
-    main: {
+    step1: {
       title: 'WELCOME TO OUR AUTOMATED INSTALLER',
-      step1: {
-        title: 'Install DET.io Dash',
-        type1: {
-          title: 'Hosted',
-          price: '+$10.00/mo',
-          dash: 'dash',
-          minified_edition_name: 'Minified',
-          complete_edition_name: 'Complete',
-          edition: 'Edition'
-        },
-        type2: {
-          title: 'On-Premise',
-          description: 'Product: Complete',
-          ipaddress: 'IP Address',
-          user: "Username",
-          password: 'Password'
-        }
+      sub: {
+        title: 'Install DET.io Dash'
       },
-      step2: {
-        title: 'step2'
+      type1: {
+        title: 'Hosted',
+        price: '+$10.00/mo',
+        dash: 'dash',
+        minified_edition_name: 'Minified',
+        complete_edition_name: 'Complete',
+        edition: 'Edition'
       },
-      step3: {
-        title: 'step3'
+      type2: {
+        title: 'On-Premise',
+        description: 'Product: Complete',
+        ipaddress: 'IP Address',
+        user: "Username",
+        password: 'Password'
+      }
+    },
+    step2: {
+      sub: {
+        title: 'Install Host servers'
+      },
+      host: 'Host'
+    },
+    step3: {
+      sub: {
+        title: 'Verify your host servers'
       }
     },
     errors: {
@@ -2287,587 +2689,6 @@ define('meg/locales/en/translations', ['exports'], function (exports) {
       even: "must be even"
     }
   };
-});
-define('meg/mixins/ajax-request', ['exports', 'ember', 'meg/mixins/errors', 'meg/utils/parse-response-headers', 'meg/utils/url-helpers', 'meg/utils/ajax'], function (exports, _ember, _megMixinsErrors, _megUtilsParseResponseHeaders, _megUtilsUrlHelpers, _megUtilsAjax) {
-  var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-  var EmberError = _ember['default'].Error;
-  var Promise = _ember['default'].RSVP.Promise;
-  var get = _ember['default'].get;
-  var isNone = _ember['default'].isNone;
-  var merge = _ember['default'].merge;
-  var run = _ember['default'].run;
-  var Test = _ember['default'].Test;
-  var testing = _ember['default'].testing;
-
-  var JSONAPIContentType = 'application/vnd.api+json';
-
-  function isJSONAPIContentType(header) {
-    if (isNone(header)) {
-      return false;
-    }
-    return header.indexOf(JSONAPIContentType) === 0;
-  }
-
-  var AjaxRequest = (function () {
-    function AjaxRequest() {
-      _classCallCheck(this, AjaxRequest);
-
-      this.init();
-    }
-
-    _createClass(AjaxRequest, [{
-      key: 'init',
-      value: function init() {
-        var _this = this;
-
-        this.pendingRequestCount = 0;
-        if (testing) {
-          Test.registerWaiter(function () {
-            return _this.pendingRequestCount === 0;
-          });
-        }
-      }
-    }, {
-      key: 'request',
-      value: function request(url, options) {
-        var _this2 = this;
-
-        var hash = this.options(url, options);
-        return new Promise(function (resolve, reject) {
-          _this2.raw(url, hash).then(function (_ref) {
-            var response = _ref.response;
-
-            resolve(response);
-          })['catch'](function (_ref2) {
-            var response = _ref2.response;
-
-            reject(response);
-          });
-        }, 'ember-ajax: ' + hash.type + ' ' + hash.url + ' response');
-      }
-    }, {
-      key: 'raw',
-      value: function raw(url, options) {
-        var _this3 = this;
-
-        var hash = this.options(url, options);
-        var requestData = {
-          type: hash.type,
-          url: hash.url
-        };
-
-        if (isJSONAPIContentType(hash.headers['Content-Type'])) {
-          if (typeof hash.data === 'object') {
-            hash.data = JSON.stringify(hash.data);
-          }
-        }
-
-        return new Promise(function (resolve, reject) {
-          hash.success = function (payload, textStatus, jqXHR) {
-            var response = _this3.handleResponse(jqXHR.status, (0, _megUtilsParseResponseHeaders['default'])(jqXHR.getAllResponseHeaders()), payload, requestData);
-
-            _this3.pendingRequestCount--;
-
-            if ((0, _megMixinsErrors.isAjaxError)(response)) {
-              run.join(null, reject, { payload: payload, textStatus: textStatus, jqXHR: jqXHR, response: response });
-            } else {
-              run.join(null, resolve, { payload: payload, textStatus: textStatus, jqXHR: jqXHR, response: response });
-            }
-          };
-
-          hash.error = function (jqXHR, textStatus, errorThrown) {
-            var payload = _this3.parseErrorResponse(jqXHR.responseText) || errorThrown;
-            var response = undefined;
-
-            if (errorThrown instanceof Error) {
-              response = errorThrown;
-            } else if (textStatus === 'timeout') {
-              response = new _megMixinsErrors.TimeoutError();
-            } else if (textStatus === 'abort') {
-              response = new _megMixinsErrors.AbortError();
-            } else {
-              response = _this3.handleResponse(jqXHR.status, (0, _megUtilsParseResponseHeaders['default'])(jqXHR.getAllResponseHeaders()), payload, requestData);
-            }
-
-            _this3.pendingRequestCount--;
-
-            run.join(null, reject, { payload: payload, textStatus: textStatus, jqXHR: jqXHR, errorThrown: errorThrown, response: response });
-          };
-
-          _this3.pendingRequestCount++;
-
-          (0, _megUtilsAjax['default'])(hash);
-        }, 'ember-ajax: ' + hash.type + ' ' + hash.url);
-      }
-
-      /**
-       * calls `request()` but forces `options.type` to `POST`
-       * @public
-       */
-    }, {
-      key: 'post',
-      value: function post(url, options) {
-        return this.request(url, this._addTypeToOptionsFor(options, 'POST'));
-      }
-
-      /**
-       * calls `request()` but forces `options.type` to `PUT`
-       * @public
-       */
-    }, {
-      key: 'put',
-      value: function put(url, options) {
-        return this.request(url, this._addTypeToOptionsFor(options, 'PUT'));
-      }
-
-      /**
-       * calls `request()` but forces `options.type` to `PATCH`
-       * @public
-       */
-    }, {
-      key: 'patch',
-      value: function patch(url, options) {
-        return this.request(url, this._addTypeToOptionsFor(options, 'PATCH'));
-      }
-
-      /**
-       * calls `request()` but forces `options.type` to `DELETE`
-       * @public
-       */
-    }, {
-      key: 'del',
-      value: function del(url, options) {
-        return this.request(url, this._addTypeToOptionsFor(options, 'DELETE'));
-      }
-
-      /**
-       * calls `request()` but forces `options.type` to `DELETE`
-       * alias for `del()`
-       * @public
-       */
-    }, {
-      key: 'delete',
-      value: function _delete() {
-        return this.del.apply(this, arguments);
-      }
-
-      /**
-       * Wrap the `.get` method so that we issue a warning if
-       *
-       * Since `.get` is both an AJAX pattern _and_ an Ember pattern, we want to try
-       * to warn users when they try using `.get` to make a request
-       *
-       * @method get
-       * @public
-       */
-    }, {
-      key: 'get',
-      value: function get(url) {
-        if (arguments.length > 1 || url.charAt(0) === '/') {
-          throw new EmberError('It seems you tried to use `.get` to make a request! Use the `.request` method instead.');
-        }
-        return this._super.apply(this, arguments);
-      }
-
-      // forcibly manipulates the options hash to include the HTTP method on the type key
-    }, {
-      key: '_addTypeToOptionsFor',
-      value: function _addTypeToOptionsFor(options, method) {
-        options = options || {};
-        options.type = method;
-        return options;
-      }
-
-      /**
-       * @method _getFullHeadersHash
-       * @private
-       * @param {Object} headers
-       * @return {Object}
-       */
-    }, {
-      key: '_getFullHeadersHash',
-      value: function _getFullHeadersHash(headers) {
-        var classHeaders = get(this, 'headers') || {};
-        var _headers = merge({}, classHeaders);
-        return merge(_headers, headers);
-      }
-
-      /**
-       * @method options
-       * @private
-       * @param {String} url
-       * @param {Object} options
-       * @return {Object}
-       */
-    }, {
-      key: 'options',
-      value: function options(url) {
-        var _options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-        _options.url = this._buildURL(url, _options);
-        _options.type = _options.type || 'GET';
-        _options.dataType = _options.dataType || 'json';
-        _options.context = this;
-
-        if (this._shouldSendHeaders(_options)) {
-          _options.headers = this._getFullHeadersHash(_options.headers);
-        } else {
-          _options.headers = _options.headers || {};
-        }
-
-        return _options;
-      }
-    }, {
-      key: '_buildURL',
-      value: function _buildURL(url, options) {
-        var host = options.host || get(this, 'host');
-        var namespace = get(this, 'namespace');
-        var urlObject = new _megUtilsUrlHelpers.RequestURL(url);
-
-        // If the URL passed is not relative, return the whole URL
-        if (urlObject.isAbsolute) {
-          return urlObject.href;
-        }
-
-        var _url = this._normalizePath(url);
-        var _namespace = this._normalizePath(namespace);
-
-        return [host, _namespace, _url].join('');
-      }
-    }, {
-      key: '_normalizePath',
-      value: function _normalizePath(path) {
-        if (path) {
-          // make sure path starts with `/`
-          if (path.charAt(0) !== '/') {
-            path = '/' + path;
-          }
-
-          // remove end `/`
-          if (path.charAt(path.length - 1) === '/') {
-            path = path.slice(0, -1);
-          }
-        }
-        return path;
-      }
-
-      /**
-       * Takes an ajax response, and returns the json payload or an error.
-       *
-       * By default this hook just returns the json payload passed to it.
-       * You might want to override it in two cases:
-       *
-       * 1. Your API might return useful results in the response headers.
-       *    Response headers are passed in as the second argument.
-       *
-       * 2. Your API might return errors as successful responses with status code
-       *    200 and an Errors text or object.
-       *
-       * @method handleResponse
-       * @private
-       * @param  {Number} status
-       * @param  {Object} headers
-       * @param  {Object} payload
-       * @param  {Object} requestData the original request information
-       * @return {Object | AjaxError} response
-       */
-    }, {
-      key: 'handleResponse',
-      value: function handleResponse(status, headers, payload, requestData) {
-        payload = payload || {};
-        var errors = this.normalizeErrorResponse(status, headers, payload);
-
-        if (this.isSuccess(status, headers, payload)) {
-          return payload;
-        } else if (this.isUnauthorizedError(status, headers, payload)) {
-          return new _megMixinsErrors.UnauthorizedError(errors);
-        } else if (this.isForbiddenError(status, headers, payload)) {
-          return new _megMixinsErrors.ForbiddenError(errors);
-        } else if (this.isInvalidError(status, headers, payload)) {
-          return new _megMixinsErrors.InvalidError(errors);
-        } else if (this.isBadRequestError(status, headers, payload)) {
-          return new _megMixinsErrors.BadRequestError(errors);
-        } else if (this.isNotFoundError(status, headers, payload)) {
-          return new _megMixinsErrors.NotFoundError(errors);
-        } else if (this.isServerError(status, headers, payload)) {
-          return new _megMixinsErrors.ServerError(errors);
-        }
-
-        var detailedMessage = this.generateDetailedMessage(status, headers, payload, requestData);
-        return new _megMixinsErrors.AjaxError(errors, detailedMessage);
-      }
-
-      /**
-       * Match the host to a provided array of strings or regexes that can match to a host
-       *
-       * @method matchHosts
-       * @private
-       * @param {String} host the host you are sending too
-       * @param {RegExp | String} matcher a string or regex that you can match the host to.
-       * @returns {Boolean} if the host passed the matcher
-       */
-
-    }, {
-      key: '_matchHosts',
-      value: function _matchHosts(host, matcher) {
-        if (matcher.constructor === RegExp) {
-          return matcher.test(host);
-        } else if (typeof matcher === 'string') {
-          return matcher === host;
-        } else {
-          _ember['default'].Logger.warn('trustedHosts only handles strings or regexes.', matcher, 'is neither.');
-          return false;
-        }
-      }
-
-      /**
-       * Determine whether the headers should be added for this request
-       *
-       * This hook is used to help prevent sending headers to every host, regardless
-       * of the destination, since this could be a security issue if authentication
-       * tokens are accidentally leaked to third parties.
-       *
-       * To avoid that problem, subclasses should utilize the `headers` computed
-       * property to prevent authentication from being sent to third parties, or
-       * implement this hook for more fine-grain control over when headers are sent.
-       *
-       * By default, the headers are sent if the host of the request matches the
-       * `host` property designated on the class.
-       *
-       * @method _shouldSendHeaders
-       * @private
-       * @property {Object} hash request options hash
-       * @returns {Boolean} whether or not headers should be sent
-       */
-    }, {
-      key: '_shouldSendHeaders',
-      value: function _shouldSendHeaders(_ref3) {
-        var _this4 = this;
-
-        var url = _ref3.url;
-        var host = _ref3.host;
-
-        url = url || '';
-        host = host || get(this, 'host') || '';
-
-        var urlObject = new _megUtilsUrlHelpers.RequestURL(url);
-        var trustedHosts = get(this, 'trustedHosts') || _ember['default'].A();
-        // Add headers on relative URLs
-
-        if (!urlObject.isAbsolute) {
-          return true;
-        } else if (trustedHosts.find(function (matcher) {
-          return _this4._matchHosts(urlObject.hostname, matcher);
-        })) {
-          return true;
-        }
-
-        // Add headers on matching host
-        var hostObject = new _megUtilsUrlHelpers.RequestURL(host);
-        return urlObject.sameHost(hostObject);
-      }
-
-      /**
-       * Generates a detailed ("friendly") error message, with plenty
-       * of information for debugging (good luck!)
-       * @method generateDetailedMessage
-       * @private
-       * @param  {Number} status
-       * @param  {Object} headers
-       * @param  {Object} payload
-       * @param  {Object} requestData the original request information
-       * @return {Object} request information
-       */
-    }, {
-      key: 'generateDetailedMessage',
-      value: function generateDetailedMessage(status, headers, payload, requestData) {
-        var shortenedPayload = undefined;
-        var payloadContentType = headers['Content-Type'] || 'Empty Content-Type';
-
-        if (payloadContentType === 'text/html' && payload.length > 250) {
-          shortenedPayload = '[Omitted Lengthy HTML]';
-        } else {
-          shortenedPayload = JSON.stringify(payload);
-        }
-
-        var requestDescription = requestData.type + ' ' + requestData.url;
-        var payloadDescription = 'Payload (' + payloadContentType + ')';
-
-        return ['Ember Data Request ' + requestDescription + ' returned a ' + status, payloadDescription, shortenedPayload].join('\n');
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a an authorized error.
-       * @method isUnauthorizedError
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isUnauthorizedError',
-      value: function isUnauthorizedError(status) {
-        return (0, _megMixinsErrors.isUnauthorizedError)(status);
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a forbidden error.
-       * @method isForbiddenError
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isForbiddenError',
-      value: function isForbiddenError(status) {
-        return (0, _megMixinsErrors.isForbiddenError)(status);
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a an invalid error.
-       * @method isInvalidError
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isInvalidError',
-      value: function isInvalidError(status) {
-        return (0, _megMixinsErrors.isInvalidError)(status);
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a bad request error.
-       * @method isBadRequestError
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isBadRequestError',
-      value: function isBadRequestError(status) {
-        return (0, _megMixinsErrors.isBadRequestError)(status);
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a "not found" error.
-       * @method isNotFoundError
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isNotFoundError',
-      value: function isNotFoundError(status) {
-        return (0, _megMixinsErrors.isNotFoundError)(status);
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a server error.
-       * @method isServerError
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isServerError',
-      value: function isServerError(status) {
-        return (0, _megMixinsErrors.isServerError)(status);
-      }
-
-      /**
-       * Default `handleResponse` implementation uses this hook to decide if the
-       * response is a success.
-       * @method isSuccess
-       * @private
-       * @param {Number} status
-       * @param {Object} headers
-       * @param {Object} payload
-       * @return {Boolean}
-       */
-    }, {
-      key: 'isSuccess',
-      value: function isSuccess(status) {
-        return (0, _megMixinsErrors.isSuccess)(status);
-      }
-
-      /**
-       * @method parseErrorResponse
-       * @private
-       * @param {String} responseText
-       * @return {Object}
-       */
-    }, {
-      key: 'parseErrorResponse',
-      value: function parseErrorResponse(responseText) {
-        var json = responseText;
-
-        try {
-          json = $.parseJSON(responseText);
-        } catch (e) {}
-
-        return json;
-      }
-
-      /**
-       * @method normalizeErrorResponse
-       * @private
-       * @param  {Number} status
-       * @param  {Object} headers
-       * @param  {Object} payload
-       * @return {Array} errors payload
-       */
-    }, {
-      key: 'normalizeErrorResponse',
-      value: function normalizeErrorResponse(status, headers, payload) {
-        if (payload && typeof payload === 'object' && payload.errors) {
-          if (!_ember['default'].isArray(payload.errors)) {
-            return payload.errors;
-          }
-
-          return payload.errors.map(function (error) {
-            var ret = merge({}, error);
-
-            if (typeof ret.status === 'number') {
-              ret.status = '' + ret.status;
-            }
-
-            return ret;
-          });
-        } else {
-          return [{
-            status: '' + status,
-            title: 'The backend responded with an error',
-            detail: payload
-          }];
-        }
-      }
-    }]);
-
-    return AjaxRequest;
-  })();
-
-  exports['default'] = AjaxRequest;
 });
 define('meg/mixins/control', ['exports', 'ember'], function (exports, _ember) {
 
@@ -2912,6 +2733,9 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
   exports.isAbortError = isAbortError;
   exports.isServerError = isServerError;
   exports.isSuccess = isSuccess;
+
+  function _instanceof(left, right) { if (right != null && right[Symbol.hasInstance]) { return right[Symbol.hasInstance](left); } else { return left instanceof right; } }
+
   var EmberError = _ember['default'].Error;
 
   /**
@@ -3029,7 +2853,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
    */
 
   function isAjaxError(error) {
-    return error instanceof AjaxError;
+    return _instanceof(error, AjaxError);
   }
 
   /**
@@ -3043,7 +2867,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
 
   function isUnauthorizedError(error) {
     if (isAjaxError(error)) {
-      return error instanceof UnauthorizedError;
+      return _instanceof(error, UnauthorizedError);
     } else {
       return error === 401;
     }
@@ -3060,7 +2884,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
 
   function isForbiddenError(error) {
     if (isAjaxError(error)) {
-      return error instanceof ForbiddenError;
+      return _instanceof(error, ForbiddenError);
     } else {
       return error === 403;
     }
@@ -3077,7 +2901,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
 
   function isInvalidError(error) {
     if (isAjaxError(error)) {
-      return error instanceof InvalidError;
+      return _instanceof(error, InvalidError);
     } else {
       return error === 422;
     }
@@ -3094,7 +2918,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
 
   function isBadRequestError(error) {
     if (isAjaxError(error)) {
-      return error instanceof BadRequestError;
+      return _instanceof(error, BadRequestError);
     } else {
       return error === 400;
     }
@@ -3111,7 +2935,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
 
   function isNotFoundError(error) {
     if (isAjaxError(error)) {
-      return error instanceof NotFoundError;
+      return _instanceof(error, NotFoundError);
     } else {
       return error === 404;
     }
@@ -3127,7 +2951,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
    */
 
   function isTimeoutError(error) {
-    return error instanceof TimeoutError;
+    return _instanceof(error, TimeoutError);
   }
 
   /**
@@ -3140,7 +2964,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
    */
 
   function isAbortError(error) {
-    return error instanceof AbortError;
+    return _instanceof(error, AbortError);
   }
 
   /**
@@ -3153,7 +2977,7 @@ define('meg/mixins/errors', ['exports', 'ember'], function (exports, _ember) {
 
   function isServerError(error) {
     if (isAjaxError(error)) {
-      return error instanceof ServerError;
+      return _instanceof(error, ServerError);
     } else {
       return error >= 500 && error < 600;
     }
@@ -3246,6 +3070,30 @@ define('meg/mixins/in_form', ['exports', 'ember'], function (exports, _ember) {
     })
   });
 });
+define('meg/mixins/text-input', ['exports', 'ember'], function (exports, _ember) {
+    var Mixin = _ember['default'].Mixin;
+    exports['default'] = Mixin.create({
+        selectOnClick: false,
+        stopEnterKeyDownPropagation: false,
+
+        click: function click(event) {
+            if (this.get('selectOnClick')) {
+                event.currentTarget.select();
+            }
+        },
+
+        keyDown: function keyDown(event) {
+            // stop event propagation when pressing "enter"
+            // most useful in the case when undesired (global) keyboard shortcuts are getting triggered while interacting
+            // with this particular input element.
+            if (this.get('stopEnterKeyDownPropagation') && event.keyCode === 13) {
+                event.stopPropagation();
+
+                return true;
+            }
+        }
+    });
+});
 define('meg/mixins/transition-mixin', ['exports', 'ember-css-transitions/mixins/transition-mixin'], function (exports, _emberCssTransitionsMixinsTransitionMixin) {
   Object.defineProperty(exports, 'default', {
     enumerable: true,
@@ -3254,83 +3102,190 @@ define('meg/mixins/transition-mixin', ['exports', 'ember-css-transitions/mixins/
     }
   });
 });
+define('meg/mixins/validation-engine', ['exports', 'ember', 'ember-data', 'ember-data/model', 'meg/utils/ajax', 'meg/utils/validator-extensions'], function (exports, _ember, _emberData, _emberDataModel, _megUtilsAjax, _megUtilsValidatorExtensions) {
+    function _instanceof(left, right) { if (right != null && right[Symbol.hasInstance]) { return right[Symbol.hasInstance](left); } else { return left instanceof right; } }
+
+    //import SignupValidator from 'meg/validators/signup';
+    //import SigninValidator from 'meg/validators/signin';
+
+    var Mixin = _ember['default'].Mixin;
+    var RSVP = _ember['default'].RSVP;
+    var isArray = _ember['default'].isArray;
+    var Errors = _emberData['default'].Errors;
+
+    var emberA = _ember['default'].A;
+
+    // our extensions to the validator library
+    _megUtilsValidatorExtensions['default'].init();
+
+    /**
+    * The class that gets this mixin will receive these properties and functions.
+    * It will be able to validate any properties on itself (or the model it passes to validate())
+    * with the use of a declared validator.
+    */
+    exports['default'] = Mixin.create({
+        // these validators can be passed a model to validate when the class that
+        // mixes in the ValidationEngine declares a validationType equal to a key on this object.
+        // the model is either passed in via `this.validate({ model: object })`
+        // or by calling `this.validate()` without the model property.
+        // in that case the model will be the class that the ValidationEngine
+        // was mixed into, i.e. the controller or Ember Data model.
+        validators: {
+            //signup: SignupValidator,
+            //signin: SigninValidator,
+        },
+
+        // This adds the Errors object to the validation engine, and shouldn't affect
+        // ember-data models because they essentially use the same thing
+        errors: null,
+
+        // Store whether a property has been validated yet, so that we know whether or not
+        // to show error / success validation for a field
+        hasValidated: null,
+
+        init: function init() {
+            this._super.apply(this, arguments);
+            this.set('errors', Errors.create());
+            this.set('hasValidated', emberA());
+        },
+
+        /**
+        * Passes the model to the validator specified by validationType.
+        * Returns a promise that will resolve if validation succeeds, and reject if not.
+        * Some options can be specified:
+        *
+        * `model: Object` - you can specify the model to be validated, rather than pass the default value of `this`,
+        *                   the class that mixes in this mixin.
+        *
+        * `property: String` - you can specify a specific property to validate. If
+        * 					   no property is specified, the entire model will be
+        * 					   validated
+        */
+        validate: function validate(opts) {
+            var model = this;
+            var hasValidated = undefined,
+                type = undefined,
+                validator = undefined;
+
+            opts = opts || {};
+            if (opts.model) {
+                model = opts.model;
+            } else if (_instanceof(this, _emberDataModel['default'])) {
+                model = this;
+            } else if (this.get('model')) {
+                model = this.get('model');
+            }
+            type = this.get('validationType') || model.get('validationType');
+            //validator = this.get(`validators.${type}`) || model.get(`validators.${type}`);
+            validator = this.get('validators.' + type);
+            hasValidated = this.get('hasValidated');
+            opts.validationType = type;
+
+            return new RSVP.Promise(function (resolve, reject) {
+                var passed = undefined;
+
+                if (!type || !validator) {
+                    return reject(['The validator specified, "' + type + '", did not exist!']);
+                }
+
+                if (opts.property) {
+                    // If property isn't in `hasValidated`, add it to mark that this field can show a validation result
+                    hasValidated.addObject(opts.property);
+                    model.get('errors').remove(opts.property);
+                    //model.errors.remove(opts.property);
+                } else {
+                        model.get('errors').clear();
+                        //model.errors.clear();
+                    }
+
+                passed = validator.check(model, opts.property);
+                return passed ? resolve() : reject();
+            });
+        },
+
+        /**
+        * The primary goal of this method is to override the `save` method on Ember Data models.
+        * This allows us to run validation before actually trying to save the model to the server.
+        * You can supply options to be passed into the `validate` method, since the ED `save` method takes no options.
+        */
+        save: function save(options) {
+            var _this = this;
+
+            var _super = this._super;
+
+            options = options || {};
+            options.wasSave = true;
+
+            // model.destroyRecord() calls model.save() behind the scenes.
+            // in that case, we don't need validation checks or error propagation,
+            // because the model itself is being destroyed.
+            if (this.get('isDeleted')) {
+                return this._super.apply(this, arguments);
+            }
+
+            // If validation fails, reject with validation errors.
+            // If save to the server fails, reject with server response.
+            return this.validate(options).then(function () {
+                return _super.call(_this, options);
+            })['catch'](function (result) {
+                // server save failed or validator type doesn't exist
+                if (result && !isArray(result)) {
+                    // return the array of errors from the server
+                    result = (0, _megUtilsAjax['default'])(result);
+                }
+
+                return RSVP.reject(result);
+            });
+        },
+
+        actions: {
+            validate: function validate(property) {
+                this.validate({ property: property });
+            }
+        }
+    });
+});
+define('meg/mixins/validation-state', ['exports', 'ember'], function (exports, _ember) {
+    var Mixin = _ember['default'].Mixin;
+    var computed = _ember['default'].computed;
+    var isEmpty = _ember['default'].isEmpty;
+
+    var emberA = _ember['default'].A;
+
+    exports['default'] = Mixin.create({
+
+        errors: null,
+        property: '',
+        hasValidated: emberA(),
+
+        hasError: computed('errors.[]', 'property', 'hasValidated.[]', function () {
+            var property = this.get('property');
+            var errors = this.get('errors');
+            var hasValidated = this.get('hasValidated');
+
+            // if we aren't looking at a specific property we always want an error class
+            if (!property && !isEmpty(errors)) {
+                return true;
+            }
+
+            // If we haven't yet validated this field, there is no validation class needed
+            if (!hasValidated || !hasValidated.contains(property)) {
+                return false;
+            }
+
+            if (errors) {
+                return errors.get(property);
+            }
+
+            return false;
+        })
+
+    });
+});
 define('meg/models/model', ['exports', 'ember-data/model'], function (exports, _emberDataModel) {
   exports['default'] = _emberDataModel['default'].extend();
 });
-define('meg/models/muser', ['exports', 'ember', 'ember-data', 'ember-validations'], function (exports, _ember, _emberData, _emberValidations) {
-
-  var User = _emberData['default'].Model.extend(_emberValidations['default'], {
-    first_name: _emberData['default'].attr('string'),
-    ipaddress: _emberData['default'].attr('string'),
-    password: _emberData['default'].attr('string'),
-    passwordConfirmation: _emberData['default'].attr('string'),
-    isntValid: _ember['default'].computed.not('isValid'),
-    comment: _emberData['default'].attr('string'),
-    active: _emberData['default'].attr('boolean'),
-    gender: _emberData['default'].attr('string'),
-    nameHasValue: _ember['default'].computed('name', function () {
-      var _ref;
-      return !((_ref = this.get('name')) != null ? _ref.length : void 0);
-    }),
-    asjson: _ember['default'].computed('name', 'password', 'comment', 'active', 'gender', function () {
-      return "name: " + this.get('name') + ", password: " + this.get('password') + ", comment: " + this.get('comment') + ", active: " + this.get('active') + ", gender: " + this.get('gender');
-    })
-
-  });
-
-  User.reopen({
-    ajax: _ember['default'].inject.service(),
-    validations: {
-      name: {
-        presence: true,
-        length: {
-          minimum: 5
-        }
-      },
-      ipaddress: {
-        presence: true,
-        length: {
-          minimum: 15
-        }
-      },
-      password: {
-        confirmation: true,
-        presence: true,
-        length: {
-          minimum: 6
-        }
-      },
-      passwordConfirmation: {
-        presence: {
-          message: ' please confirm password'
-        },
-        length: {
-          minimum: 6
-        }
-      },
-      comment: {
-        presence: true
-      },
-      gender: {
-        presence: true
-      }
-    },
-
-    createAccount: function createAccount() {
-      return this.get('ajax').request('/accounts/content', {
-        method: 'POST',
-        data: {
-          username: this.get('name'),
-          ipsddress: this.get('ipaddress'),
-          password: this.get('password')
-        }
-      });
-    }
-
-  });
-
-  exports['default'] = User;
-});
+define("meg/models/muser", ["exports"], function (exports) {});
 define('meg/models/user', ['exports', 'ember', 'ember-data', 'ember-validations'], function (exports, _ember, _emberData, _emberValidations) {
 
   var User = _emberData['default'].Model.extend(_emberValidations['default'], {
@@ -3389,10 +3344,22 @@ define('meg/models/user', ['exports', 'ember', 'ember-data', 'ember-validations'
     },
 
     createAccount: function createAccount() {
+
       return this.get('ajax').request('/accounts/content', {
         method: 'POST',
         data: {
           username: this.get('name'),
+          email: this.get('email'),
+          password: this.get('password')
+
+        }
+      });
+    },
+    LoginAccount: function LoginAccount() {
+
+      return this.get('ajax').request('/login', {
+        method: 'POST',
+        data: {
           email: this.get('email'),
           password: this.get('password')
         }
@@ -3406,22 +3373,30 @@ define('meg/models/user', ['exports', 'ember', 'ember-data', 'ember-validations'
 define('meg/resolver', ['exports', 'ember-resolver'], function (exports, _emberResolver) {
   exports['default'] = _emberResolver['default'];
 });
-define('meg/router', ['exports', 'ember', 'meg/config/environment'], function (exports, _ember, _megConfigEnvironment) {
+define('meg/router', ['exports', 'ember', 'meg/utils/document-title', 'meg/config/environment'], function (exports, _ember, _megUtilsDocumentTitle, _megConfigEnvironment) {
+    var service = _ember['default'].inject.service;
+    var on = _ember['default'].on;
 
-	var Router = _ember['default'].Router.extend({
-		location: _megConfigEnvironment['default'].locationType
-	});
+    var Router = _ember['default'].Router.extend({
+        location: _megConfigEnvironment['default'].locationType });
 
-	Router.map(function () {
+    // use HTML5 History API instead of hash-tag based URLs
 
-		this.route('home', { path: '/' });
-		this.route('main');
-		this.route('master');
-		this.route('signup');
-		this.route('signin');
-	});
+    (0, _megUtilsDocumentTitle['default'])();
 
-	exports['default'] = Router;
+    Router.map(function () {
+
+        this.route('home', { path: '/' });
+        this.route('main');
+        this.route('step1');
+        this.route('step2');
+        this.route('step3');
+        this.route('master');
+        this.route('signup');
+        this.route('signin');
+    });
+
+    exports['default'] = Router;
 });
 define('meg/routes/application', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
   //import config from 'meg/config/environment';
@@ -3432,8 +3407,7 @@ define('meg/routes/application', ['exports', 'meg/routes/basic'], function (expo
 
       signupPage: function signupPage() {
         //this.transitionTo('signup');
-        //this.transitionTo('main');
-        this.transitionTo('master');
+        this.transitionTo('step1');
         return true;
       },
 
@@ -3441,7 +3415,6 @@ define('meg/routes/application', ['exports', 'meg/routes/basic'], function (expo
         this.transitionTo('signin');
         return true;
       }
-
     }
 
   });
@@ -3461,9 +3434,15 @@ define('meg/routes/home', ['exports', 'meg/routes/basic'], function (exports, _m
   exports['default'] = _megRoutesBasic['default'].extend({});
 });
 define('meg/routes/main', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
-  //import config from 'meg/config/environment';
+   //import config from 'meg/config/environment';
 
-  exports['default'] = _megRoutesBasic['default'].extend({});
+   exports['default'] = _megRoutesBasic['default'].extend({
+      model: function model() {
+         var model;
+         model = this.get('store').createRecord('host-info');
+         return model;
+      }
+   });
 });
 define('meg/routes/master', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
    //import config from 'meg/config/environment';
@@ -3477,90 +3456,65 @@ define('meg/routes/master', ['exports', 'meg/routes/basic'], function (exports, 
    });
 });
 define('meg/routes/signin', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
-   //import Ember from 'ember';
+  //import Ember from 'ember';
 
-   exports['default'] = _megRoutesBasic['default'].extend({
-      model: function model() {
-         var model;
-         model = this.get('store').createRecord('user');
-         return model;
-      }
-   });
+  exports['default'] = _megRoutesBasic['default'].extend({
+
+    model: function model() {
+
+      var model;
+      //model = this.get('store').queryRecord('user', { filter: { email: User.email} });
+      model = this.get('store').createRecord('user');
+      return model;
+    }
+
+  });
 });
 define('meg/routes/signup', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
-   //import Ember from 'ember';
+  //import Ember from 'ember';
 
-   exports['default'] = _megRoutesBasic['default'].extend({
-      model: function model() {
-         var model;
-         model = this.get('store').createRecord('user');
-         return model;
-      }
-   });
+  exports['default'] = _megRoutesBasic['default'].extend({
+    model: function model() {
+
+      var model;
+      model = this.get('store').createRecord('user');
+      return model;
+    }
+  });
 });
-define('meg/services/ajax', ['exports', 'ember', 'meg/mixins/ajax-request', 'ember-mixinify-class'], function (exports, _ember, _megMixinsAjaxRequest, _emberMixinifyClass) {
-  var Service = _ember['default'].Service;
+define('meg/routes/step1', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
+  //import config from 'meg/config/environment';
 
-  /**
-   * ### Headers customization
-   *
-   * Some APIs require HTTP headers, e.g. to provide an API key. Arbitrary
-   * headers can be set as key/value pairs on the `RESTAdapter`'s `headers`
-   * object and Ember Data will send them along with each ajax request.
-   *
-   * ```app/services/ajax
-   * import AjaxService from 'ember-ajax/services/ajax';
-   *
-   * export default AjaxService.extend({
-   *   headers: {
-   *     "API_KEY": "secret key",
-   *     "ANOTHER_HEADER": "Some header value"
-   *   }
-   * });
-   * ```
-   *
-   * `headers` can also be used as a computed property to support dynamic
-   * headers.
-   *
-   * ```app/services/ajax.js
-   * import Ember from 'ember';
-   * import AjaxService from 'ember-ajax/services/ajax';
-   *
-   * export default AjaxService.extend({
-   *   session: Ember.inject.service(),
-   *   headers: Ember.computed("session.authToken", function() {
-   *     return {
-   *       "API_KEY": this.get("session.authToken"),
-   *       "ANOTHER_HEADER": "Some header value"
-   *     };
-   *   })
-   * });
-   * ```
-   *
-   * In some cases, your dynamic headers may require data from some
-   * object outside of Ember's observer system (for example
-   * `document.cookie`). You can use the
-   * [volatile](/api/classes/Ember.ComputedProperty.html#method_volatile)
-   * function to set the property into a non-cached mode causing the headers to
-   * be recomputed with every request.
-   *
-   * ```app/services/ajax.js
-   * import Ember from 'ember';
-   * import AjaxService from 'ember-ajax/services/ajax';
-   *
-   * export default AjaxService.extend({
-   *   session: Ember.inject.service(),
-   *   headers: Ember.computed("session.authToken", function() {
-   *     return {
-   *       "API_KEY": Ember.get(document.cookie.match(/apiKey\=([^;]*)/), "1"),
-   *       "ANOTHER_HEADER": "Some header value"
-   *     };
-   *   }).volatile()
-   * });
-   * ```
-   * @public
-   */
-  exports['default'] = Service.extend((0, _emberMixinifyClass['default'])(_megMixinsAjaxRequest['default']));
+  exports['default'] = _megRoutesBasic['default'].extend({});
+});
+define('meg/routes/step2', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
+  exports['default'] = _megRoutesBasic['default'].extend({});
+});
+define('meg/routes/step3', ['exports', 'meg/routes/basic'], function (exports, _megRoutesBasic) {
+  //import config from 'meg/config/environment';
+
+  var _Ember = Ember;
+  var Controller = _Ember.Controller;
+  var service = _Ember.inject.service;
+  exports['default'] = _megRoutesBasic['default'].extend({
+    sessionStorage: service(),
+
+    actions: {
+      sample: function sample() {
+        console.log("++++++++++++++++++++++++++++");
+        console.log(this.get('sessionStorage').getItem('megdc.hostinfos'));
+      }
+    }
+
+  });
+});
+define('meg/services/ajax', ['exports', 'ember-ajax/services/ajax'], function (exports, _emberAjaxServicesAjax) {
+  Object.defineProperty(exports, 'default', {
+    enumerable: true,
+    get: function get() {
+      return _emberAjaxServicesAjax['default'];
+    }
+  });
 });
 define('meg/services/auth', ['exports', 'ember'], function (exports, _ember) {
   exports['default'] = _ember['default'].Service.extend({
@@ -3692,6 +3646,91 @@ define('meg/services/flashes', ['exports', 'ember', 'meg/utils/limited-array'], 
     }
   });
 });
+define('meg/services/hostinfos', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Service.extend({
+    ajax: Em.inject.service(),
+    create: function create(infos) {
+      console.log(infos);
+      return this.get('ajax').request('/hostinfos/content', {
+        method: 'POST',
+        data: JSON.stringify(infos)
+      });
+      /*return [
+            {
+              Status:"success",
+               Statusmsg: "",
+               IP: "103.56.92.23",
+               Password: "megam",
+               UserName: "megam",
+               Cpu: "12",
+               FileSystem: "ext4",
+               Disks: [
+                 {
+                   Disk: "sda",
+                   Type: "disk",
+                   Point: "",
+                   Size: "5.5T",
+                 },
+                 {
+                   Disk: "sda1",
+                   Type: "part",
+                   Point: "/storage1",
+                   Size: "5.5T",
+                 },
+                 {
+                   Disk: "sdb",
+                   Type: "disk",
+                   Point: "",
+                   Size: "5.5T",
+                 },
+                 {
+                   Disk: "sdb1",
+                   Type: "part",
+                   Point: "/storage2",
+                   Size: "5.5T",
+                 }
+               ]
+             },
+             {
+               Status:"success",
+               Statusmsg: "",
+               IP: "103.56.92.25",
+               Password: "megam",
+               UserName: "megam",
+               Cpu: "12",
+               FileSystem: "xfs",
+               Disks: [
+                 {
+                   Disk: "sda",
+                   Type: "disk",
+                   Point: "",
+                   Size: "5.5T",
+                 },
+                 {
+                   Disk: "sda1",
+                   Type: "part",
+                   Point: "/storage1",
+                   Size: "5.5T",
+                 },
+                 {
+                   Disk: "sdb",
+                   Type: "disk",
+                   Point: "",
+                   Size: "5.5T",
+                 },
+                 {
+                   Disk: "sdb1",
+                   Type: "part",
+                   Point: "/storage2",
+                   Size: "5.5T",
+                 }
+               ]
+             },
+           ];*/
+    }
+
+  });
+});
 define('meg/services/i18n', ['exports', 'ember-i18n/services/i18n'], function (exports, _emberI18nServicesI18n) {
   Object.defineProperty(exports, 'default', {
     enumerable: true,
@@ -3818,6 +3857,27 @@ define('meg/services/notification-messages-service', ['exports', 'ember'], funct
         }
     });
 });
+define('meg/services/session-storage', ['exports', 'ember', 'meg/services/storage', 'meg/utils/hash-storage'], function (exports, _ember, _megServicesStorage, _megUtilsHashStorage) {
+  exports['default'] = _megServicesStorage['default'].extend({
+    init: function init() {
+      var err, storage;
+      storage = null;
+      try {
+        // firefox will not throw error on access for sessionStorage var,
+        // you need to actually get something from session
+        window.sessionStorage.getItem('foo');
+        storage = window.sessionStorage;
+      } catch (error) {
+        err = error;
+        storage = _megUtilsHashStorage['default'].create();
+      }
+      return this.set('storage', storage);
+    }
+  });
+});
+define('meg/services/session', ['exports', 'ember-simple-auth/services/session'], function (exports, _emberSimpleAuthServicesSession) {
+  exports['default'] = _emberSimpleAuthServicesSession['default'];
+});
 define('meg/services/sniffer', ['exports', 'ember'], function (exports, _ember) {
 
   var isString = function isString(value) {
@@ -3882,6 +3942,35 @@ define('meg/services/sniffer', ['exports', 'ember'], function (exports, _ember) 
       this.set('vendorPrefix', vendorPrefix);
     }
 
+  });
+});
+define('meg/services/storage', ['exports', 'ember', 'meg/utils/hash-storage'], function (exports, _ember, _megUtilsHashStorage) {
+  exports['default'] = _ember['default'].Service.extend({
+    init: function init() {
+      var err, storage;
+      storage = null;
+      try {
+        storage = window.localStorage || (function () {
+          throw 'no storage';
+        })();
+      } catch (error) {
+        err = error;
+        storage = _megUtilsHashStorage['default'].create();
+      }
+      return this.set('storage', storage);
+    },
+    getItem: function getItem(key) {
+      return this.get("storage").getItem(key);
+    },
+    setItem: function setItem(key, value) {
+      return this.get("storage").setItem(key, value);
+    },
+    removeItem: function removeItem(key) {
+      return this.get("storage").removeItem(key);
+    },
+    clear: function clear() {
+      return this.get("storage").clear();
+    }
   });
 });
 define('meg/services/transition-events', ['exports', 'ember-css-transitions/services/transition-events'], function (exports, _emberCssTransitionsServicesTransitionEvents) {
@@ -4031,6 +4120,9 @@ define('meg/services/validations', ['exports', 'ember'], function (exports, _emb
     }
   });
 });
+define('meg/session-stores/application', ['exports', 'ember-simple-auth/session-stores/adaptive'], function (exports, _emberSimpleAuthSessionStoresAdaptive) {
+  exports['default'] = _emberSimpleAuthSessionStoresAdaptive['default'].extend();
+});
 define("meg/templates/application", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
     var child0 = (function () {
@@ -4040,7 +4132,7 @@ define("meg/templates/application", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4084,7 +4176,7 @@ define("meg/templates/application", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4129,7 +4221,7 @@ define("meg/templates/components/base-focusable", ["exports"], function (exports
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4175,7 +4267,7 @@ define("meg/templates/components/em-form-control-help", ["exports"], function (e
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4221,7 +4313,7 @@ define("meg/templates/components/em-form-group", ["exports"], function (exports)
             "name": "modifiers",
             "modifiers": ["bind-attr"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4271,7 +4363,7 @@ define("meg/templates/components/em-form-group", ["exports"], function (exports)
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4315,7 +4407,7 @@ define("meg/templates/components/em-form-group", ["exports"], function (exports)
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4360,7 +4452,7 @@ define("meg/templates/components/em-form-label", ["exports"], function (exports)
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4408,7 +4500,7 @@ define("meg/templates/components/em-form-submit", ["exports"], function (exports
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4463,7 +4555,7 @@ define("meg/templates/components/em-form-submit", ["exports"], function (exports
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4512,7 +4604,7 @@ define("meg/templates/components/em-form-submit", ["exports"], function (exports
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4555,7 +4647,7 @@ define("meg/templates/components/em-form", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4599,7 +4691,7 @@ define("meg/templates/components/em-form", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4641,6 +4733,58 @@ define("meg/templates/components/em-form", ["exports"], function (exports) {
     };
   })());
 });
+define("meg/templates/components/form-control-feedback", ["exports"], function (exports) {
+  exports["default"] = Ember.HTMLBars.template((function () {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "triple-curlies"
+        },
+        "revision": "Ember@2.5.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 4,
+            "column": 0
+          }
+        },
+        "moduleName": "meg/templates/components/form-control-feedback.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("span");
+        dom.setAttribute(el1, "class", "form-control-feedback updated");
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("i");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element0 = dom.childAt(fragment, [0, 1]);
+        var morphs = new Array(1);
+        morphs[0] = dom.createAttrMorph(element0, 'class');
+        return morphs;
+      },
+      statements: [["attribute", "class", ["get", "icon", ["loc", [null, [2, 15], [2, 19]]]]]],
+      locals: [],
+      templates: []
+    };
+  })());
+});
 define("meg/templates/components/formgroup/control-within-label", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
     var child0 = (function () {
@@ -4650,7 +4794,7 @@ define("meg/templates/components/formgroup/control-within-label", ["exports"], f
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4694,7 +4838,7 @@ define("meg/templates/components/formgroup/control-within-label", ["exports"], f
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4737,7 +4881,7 @@ define("meg/templates/components/formgroup/form-group-control", ["exports"], fun
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4787,7 +4931,7 @@ define("meg/templates/components/formgroup/form-group-control", ["exports"], fun
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -4831,7 +4975,7 @@ define("meg/templates/components/formgroup/form-group-control", ["exports"], fun
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -4874,10 +5018,52 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
       var child0 = (function () {
         var child0 = (function () {
           var child0 = (function () {
+            var child0 = (function () {
+              return {
+                meta: {
+                  "fragmentReason": false,
+                  "revision": "Ember@2.5.1",
+                  "loc": {
+                    "source": null,
+                    "start": {
+                      "line": 7,
+                      "column": 16
+                    },
+                    "end": {
+                      "line": 9,
+                      "column": 16
+                    }
+                  },
+                  "moduleName": "meg/templates/components/formgroup/form-group.hbs"
+                },
+                isEmpty: false,
+                arity: 0,
+                cachedFragment: null,
+                hasRendered: false,
+                buildFragment: function buildFragment(dom) {
+                  var el0 = dom.createDocumentFragment();
+                  var el1 = dom.createTextNode("                    ");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createComment("");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createTextNode("\n");
+                  dom.appendChild(el0, el1);
+                  return el0;
+                },
+                buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+                  var morphs = new Array(1);
+                  morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+                  return morphs;
+                },
+                statements: [["inline", "form-control-feedback", [], ["icon", ["subexpr", "@mut", [["get", "v_icon", ["loc", [null, [8, 49], [8, 55]]]]], [], []]], ["loc", [null, [8, 20], [8, 57]]]]],
+                locals: [],
+                templates: []
+              };
+            })();
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -4885,7 +5071,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
                     "column": 12
                   },
                   "end": {
-                    "line": 8,
+                    "line": 11,
                     "column": 12
                   }
                 },
@@ -4904,7 +5090,11 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
                 dom.appendChild(el1, el2);
                 var el2 = dom.createComment("");
                 dom.appendChild(el1, el2);
-                var el2 = dom.createTextNode("\n                ");
+                var el2 = dom.createTextNode("\n");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createComment("");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createTextNode("                ");
                 dom.appendChild(el1, el2);
                 dom.appendChild(el0, el1);
                 var el1 = dom.createTextNode("\n");
@@ -4913,29 +5103,72 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
               },
               buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
                 var element2 = dom.childAt(fragment, [1]);
-                var morphs = new Array(2);
+                var morphs = new Array(3);
                 morphs[0] = dom.createAttrMorph(element2, 'class');
                 morphs[1] = dom.createMorphAt(element2, 1, 1);
+                morphs[2] = dom.createMorphAt(element2, 3, 3);
                 return morphs;
               },
-              statements: [["attribute", "class", ["get", "labelWrapperClass", ["loc", [null, [5, 29], [5, 46]]]]], ["inline", "partial", ["components/formgroup/control-within-label"], [], ["loc", [null, [6, 20], [6, 75]]]]],
+              statements: [["attribute", "class", ["get", "labelWrapperClass", ["loc", [null, [5, 29], [5, 46]]]]], ["inline", "partial", ["components/formgroup/control-within-label"], [], ["loc", [null, [6, 20], [6, 75]]]], ["block", "if", [["get", "v_icons", ["loc", [null, [7, 22], [7, 29]]]]], [], 0, null, ["loc", [null, [7, 16], [9, 23]]]]],
               locals: [],
-              templates: []
+              templates: [child0]
             };
           })();
           var child1 = (function () {
+            var child0 = (function () {
+              return {
+                meta: {
+                  "fragmentReason": false,
+                  "revision": "Ember@2.5.1",
+                  "loc": {
+                    "source": null,
+                    "start": {
+                      "line": 13,
+                      "column": 16
+                    },
+                    "end": {
+                      "line": 15,
+                      "column": 16
+                    }
+                  },
+                  "moduleName": "meg/templates/components/formgroup/form-group.hbs"
+                },
+                isEmpty: false,
+                arity: 0,
+                cachedFragment: null,
+                hasRendered: false,
+                buildFragment: function buildFragment(dom) {
+                  var el0 = dom.createDocumentFragment();
+                  var el1 = dom.createTextNode("                    ");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createComment("");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createTextNode("\n");
+                  dom.appendChild(el0, el1);
+                  return el0;
+                },
+                buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+                  var morphs = new Array(1);
+                  morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+                  return morphs;
+                },
+                statements: [["inline", "form-control-feedback", [], ["icon", ["subexpr", "@mut", [["get", "v_icon", ["loc", [null, [14, 49], [14, 55]]]]], [], []]], ["loc", [null, [14, 20], [14, 57]]]]],
+                locals: [],
+                templates: []
+              };
+            })();
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
-                    "line": 8,
+                    "line": 11,
                     "column": 12
                   },
                   "end": {
-                    "line": 10,
+                    "line": 16,
                     "column": 12
                   }
                 },
@@ -4953,22 +5186,26 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
                 dom.appendChild(el0, el1);
                 var el1 = dom.createTextNode("\n");
                 dom.appendChild(el0, el1);
+                var el1 = dom.createComment("");
+                dom.appendChild(el0, el1);
                 return el0;
               },
               buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-                var morphs = new Array(1);
+                var morphs = new Array(2);
                 morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+                morphs[1] = dom.createMorphAt(fragment, 3, 3, contextualElement);
+                dom.insertBoundary(fragment, null);
                 return morphs;
               },
-              statements: [["inline", "partial", ["components/formgroup/control-within-label"], [], ["loc", [null, [9, 16], [9, 71]]]]],
+              statements: [["inline", "partial", ["components/formgroup/control-within-label"], [], ["loc", [null, [12, 16], [12, 71]]]], ["block", "if", [["get", "v_icons", ["loc", [null, [13, 22], [13, 29]]]]], [], 0, null, ["loc", [null, [13, 16], [15, 23]]]]],
               locals: [],
-              templates: []
+              templates: [child0]
             };
           })();
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -4976,7 +5213,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
                   "column": 8
                 },
                 "end": {
-                  "line": 11,
+                  "line": 17,
                   "column": 8
                 }
               },
@@ -4999,25 +5236,67 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
               dom.insertBoundary(fragment, null);
               return morphs;
             },
-            statements: [["block", "if", [["get", "labelWrapperClass", ["loc", [null, [4, 18], [4, 35]]]]], [], 0, 1, ["loc", [null, [4, 12], [10, 19]]]]],
+            statements: [["block", "if", [["get", "labelWrapperClass", ["loc", [null, [4, 18], [4, 35]]]]], [], 0, 1, ["loc", [null, [4, 12], [16, 19]]]]],
             locals: [],
             templates: [child0, child1]
           };
         })();
         var child1 = (function () {
           var child0 = (function () {
+            var child0 = (function () {
+              return {
+                meta: {
+                  "fragmentReason": false,
+                  "revision": "Ember@2.5.1",
+                  "loc": {
+                    "source": null,
+                    "start": {
+                      "line": 23,
+                      "column": 15
+                    },
+                    "end": {
+                      "line": 25,
+                      "column": 16
+                    }
+                  },
+                  "moduleName": "meg/templates/components/formgroup/form-group.hbs"
+                },
+                isEmpty: false,
+                arity: 0,
+                cachedFragment: null,
+                hasRendered: false,
+                buildFragment: function buildFragment(dom) {
+                  var el0 = dom.createDocumentFragment();
+                  var el1 = dom.createTextNode("                    ");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createComment("");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createTextNode("\n");
+                  dom.appendChild(el0, el1);
+                  return el0;
+                },
+                buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+                  var morphs = new Array(1);
+                  morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+                  return morphs;
+                },
+                statements: [["inline", "form-control-feedback", [], ["icon", ["subexpr", "@mut", [["get", "v_icon", ["loc", [null, [24, 49], [24, 55]]]]], [], []]], ["loc", [null, [24, 20], [24, 57]]]]],
+                locals: [],
+                templates: []
+              };
+            })();
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
-                    "line": 12,
+                    "line": 18,
                     "column": 12
                   },
                   "end": {
-                    "line": 17,
+                    "line": 26,
                     "column": 12
                   }
                 },
@@ -5045,34 +5324,80 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
                 dom.appendChild(el0, el1);
                 var el1 = dom.createTextNode("\n");
                 dom.appendChild(el0, el1);
+                var el1 = dom.createComment("");
+                dom.appendChild(el0, el1);
                 return el0;
               },
               buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
                 var element1 = dom.childAt(fragment, [1]);
-                var morphs = new Array(3);
+                var morphs = new Array(4);
                 morphs[0] = dom.createAttrMorph(element1, 'class');
                 morphs[1] = dom.createMorphAt(element1, 1, 1);
                 morphs[2] = dom.createMorphAt(element1, 3, 3);
+                morphs[3] = dom.createMorphAt(fragment, 3, 3, contextualElement);
+                dom.insertBoundary(fragment, null);
                 return morphs;
               },
-              statements: [["attribute", "class", ["get", "labelWrapperClass", ["loc", [null, [13, 29], [13, 46]]]]], ["inline", "em-form-label", [], ["text", ["subexpr", "@mut", [["get", "label", ["loc", [null, [14, 41], [14, 46]]]]], [], []], "viewName", ["subexpr", "@mut", [["get", "labelViewName", ["loc", [null, [14, 56], [14, 69]]]]], [], []]], ["loc", [null, [14, 20], [14, 71]]]], ["inline", "partial", ["components/formgroup/form-group-control"], [], ["loc", [null, [15, 20], [15, 73]]]]],
+              statements: [["attribute", "class", ["get", "labelWrapperClass", ["loc", [null, [19, 29], [19, 46]]]]], ["inline", "em-form-label", [], ["text", ["subexpr", "@mut", [["get", "label", ["loc", [null, [20, 41], [20, 46]]]]], [], []], "viewName", ["subexpr", "@mut", [["get", "labelViewName", ["loc", [null, [20, 56], [20, 69]]]]], [], []]], ["loc", [null, [20, 20], [20, 71]]]], ["inline", "partial", ["components/formgroup/form-group-control"], [], ["loc", [null, [21, 20], [21, 73]]]], ["block", "if", [["get", "v_icons", ["loc", [null, [23, 21], [23, 28]]]]], [], 0, null, ["loc", [null, [23, 15], [25, 23]]]]],
               locals: [],
-              templates: []
+              templates: [child0]
             };
           })();
           var child1 = (function () {
+            var child0 = (function () {
+              return {
+                meta: {
+                  "fragmentReason": false,
+                  "revision": "Ember@2.5.1",
+                  "loc": {
+                    "source": null,
+                    "start": {
+                      "line": 34,
+                      "column": 16
+                    },
+                    "end": {
+                      "line": 36,
+                      "column": 16
+                    }
+                  },
+                  "moduleName": "meg/templates/components/formgroup/form-group.hbs"
+                },
+                isEmpty: false,
+                arity: 0,
+                cachedFragment: null,
+                hasRendered: false,
+                buildFragment: function buildFragment(dom) {
+                  var el0 = dom.createDocumentFragment();
+                  var el1 = dom.createTextNode("                    ");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createComment("");
+                  dom.appendChild(el0, el1);
+                  var el1 = dom.createTextNode("\n");
+                  dom.appendChild(el0, el1);
+                  return el0;
+                },
+                buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+                  var morphs = new Array(1);
+                  morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+                  return morphs;
+                },
+                statements: [["inline", "form-control-feedback", [], ["icon", ["subexpr", "@mut", [["get", "v_icon", ["loc", [null, [35, 49], [35, 55]]]]], [], []]], ["loc", [null, [35, 20], [35, 57]]]]],
+                locals: [],
+                templates: []
+              };
+            })();
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
-                    "line": 17,
+                    "line": 26,
                     "column": 12
                   },
                   "end": {
-                    "line": 20,
+                    "line": 38,
                     "column": 12
                   }
                 },
@@ -5084,41 +5409,54 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
               hasRendered: false,
               buildFragment: function buildFragment(dom) {
                 var el0 = dom.createDocumentFragment();
-                var el1 = dom.createTextNode("                ");
+                var el1 = dom.createTextNode("            ");
                 dom.appendChild(el0, el1);
-                var el1 = dom.createComment("");
-                dom.appendChild(el0, el1);
-                var el1 = dom.createTextNode("\n                ");
-                dom.appendChild(el0, el1);
-                var el1 = dom.createComment("");
+                var el1 = dom.createElement("div");
+                dom.setAttribute(el1, "class", "row");
+                var el2 = dom.createTextNode("\n                ");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createComment("");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createTextNode("\n                ");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createComment("");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createTextNode("\n");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createComment("");
+                dom.appendChild(el1, el2);
+                var el2 = dom.createTextNode("            ");
+                dom.appendChild(el1, el2);
                 dom.appendChild(el0, el1);
                 var el1 = dom.createTextNode("\n");
                 dom.appendChild(el0, el1);
                 return el0;
               },
               buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-                var morphs = new Array(2);
-                morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
-                morphs[1] = dom.createMorphAt(fragment, 3, 3, contextualElement);
+                var element0 = dom.childAt(fragment, [1]);
+                var morphs = new Array(3);
+                morphs[0] = dom.createMorphAt(element0, 1, 1);
+                morphs[1] = dom.createMorphAt(element0, 3, 3);
+                morphs[2] = dom.createMorphAt(element0, 5, 5);
                 return morphs;
               },
-              statements: [["inline", "em-form-label", [], ["text", ["subexpr", "@mut", [["get", "label", ["loc", [null, [18, 37], [18, 42]]]]], [], []], "viewName", ["subexpr", "@mut", [["get", "labelViewName", ["loc", [null, [18, 52], [18, 65]]]]], [], []]], ["loc", [null, [18, 16], [18, 67]]]], ["inline", "partial", ["components/formgroup/form-group-control"], [], ["loc", [null, [19, 16], [19, 69]]]]],
+              statements: [["inline", "em-form-label", [], ["text", ["subexpr", "@mut", [["get", "label", ["loc", [null, [29, 21], [29, 26]]]]], [], []], "viewName", ["subexpr", "@mut", [["get", "labelViewName", ["loc", [null, [30, 25], [30, 38]]]]], [], []], "extraClass", "col-sm-2"], ["loc", [null, [28, 16], [32, 18]]]], ["inline", "partial", ["components/formgroup/form-group-control"], [], ["loc", [null, [33, 16], [33, 69]]]], ["block", "if", [["get", "v_icons", ["loc", [null, [34, 22], [34, 29]]]]], [], 0, null, ["loc", [null, [34, 16], [36, 23]]]]],
               locals: [],
-              templates: []
+              templates: [child0]
             };
           })();
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
-                  "line": 11,
+                  "line": 17,
                   "column": 8
                 },
                 "end": {
-                  "line": 21,
+                  "line": 39,
                   "column": 8
                 }
               },
@@ -5141,7 +5479,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
               dom.insertBoundary(fragment, null);
               return morphs;
             },
-            statements: [["block", "if", [["get", "labelWrapperClass", ["loc", [null, [12, 18], [12, 35]]]]], [], 0, 1, ["loc", [null, [12, 12], [20, 19]]]]],
+            statements: [["block", "if", [["get", "labelWrapperClass", ["loc", [null, [18, 18], [18, 35]]]]], [], 0, 1, ["loc", [null, [18, 12], [38, 19]]]]],
             locals: [],
             templates: [child0, child1]
           };
@@ -5149,7 +5487,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -5157,7 +5495,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
                 "column": 4
               },
               "end": {
-                "line": 22,
+                "line": 40,
                 "column": 4
               }
             },
@@ -5180,7 +5518,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
             dom.insertBoundary(fragment, null);
             return morphs;
           },
-          statements: [["block", "if", [["get", "yieldInLabel", ["loc", [null, [3, 14], [3, 26]]]]], [], 0, 1, ["loc", [null, [3, 8], [21, 15]]]]],
+          statements: [["block", "if", [["get", "yieldInLabel", ["loc", [null, [3, 14], [3, 26]]]]], [], 0, 1, ["loc", [null, [3, 8], [39, 15]]]]],
           locals: [],
           templates: [child0, child1]
         };
@@ -5189,15 +5527,15 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
-                "line": 22,
+                "line": 40,
                 "column": 4
               },
               "end": {
-                "line": 24,
+                "line": 42,
                 "column": 4
               }
             },
@@ -5222,71 +5560,25 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
             morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
             return morphs;
           },
-          statements: [["inline", "partial", ["components/formgroup/form-group-control"], [], ["loc", [null, [23, 8], [23, 61]]]]],
+          statements: [["inline", "partial", ["components/formgroup/form-group-control"], [], ["loc", [null, [41, 8], [41, 61]]]]],
           locals: [],
           templates: []
         };
       })();
       var child2 = (function () {
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 26,
-                "column": 4
-              },
-              "end": {
-                "line": 28,
-                "column": 4
-              }
-            },
-            "moduleName": "meg/templates/components/formgroup/form-group.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("span");
-            dom.setAttribute(el1, "class", "form-control-feedback");
-            var el2 = dom.createElement("i");
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-            var element0 = dom.childAt(fragment, [1, 0]);
-            var morphs = new Array(1);
-            morphs[0] = dom.createAttrMorph(element0, 'class');
-            return morphs;
-          },
-          statements: [["attribute", "class", ["get", "v_icon", ["loc", [null, [27, 55], [27, 61]]]]]],
-          locals: [],
-          templates: []
-        };
-      })();
-      var child3 = (function () {
         var child0 = (function () {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
-                  "line": 32,
+                  "line": 46,
                   "column": 8
                 },
                 "end": {
-                  "line": 34,
+                  "line": 48,
                   "column": 8
                 }
               },
@@ -5311,7 +5603,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
               morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
               return morphs;
             },
-            statements: [["inline", "em-form-control-help", [], ["text", ["subexpr", "@mut", [["get", "help", ["loc", [null, [33, 40], [33, 44]]]]], [], []], "viewName", ["subexpr", "@mut", [["get", "helpViewName", ["loc", [null, [33, 54], [33, 66]]]]], [], []]], ["loc", [null, [33, 12], [33, 68]]]]],
+            statements: [["inline", "em-form-control-help", [], ["text", ["subexpr", "@mut", [["get", "help", ["loc", [null, [47, 40], [47, 44]]]]], [], []], "viewName", ["subexpr", "@mut", [["get", "helpViewName", ["loc", [null, [47, 54], [47, 66]]]]], [], []]], ["loc", [null, [47, 12], [47, 68]]]]],
             locals: [],
             templates: []
           };
@@ -5319,15 +5611,15 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
-                "line": 31,
+                "line": 45,
                 "column": 4
               },
               "end": {
-                "line": 35,
+                "line": 49,
                 "column": 4
               }
             },
@@ -5350,7 +5642,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
             dom.insertBoundary(fragment, null);
             return morphs;
           },
-          statements: [["block", "if", [["get", "canShowErrors", ["loc", [null, [32, 14], [32, 27]]]]], [], 0, null, ["loc", [null, [32, 8], [34, 15]]]]],
+          statements: [["block", "if", [["get", "canShowErrors", ["loc", [null, [46, 14], [46, 27]]]]], [], 0, null, ["loc", [null, [46, 8], [48, 15]]]]],
           locals: [],
           templates: [child0]
         };
@@ -5361,7 +5653,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
             "name": "missing-wrapper",
             "problems": ["wrong-type", "multiple-nodes"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -5369,7 +5661,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
               "column": 0
             },
             "end": {
-              "line": 36,
+              "line": 50,
               "column": 0
             }
           },
@@ -5387,39 +5679,34 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
           dom.appendChild(el0, el1);
           var el1 = dom.createComment("");
           dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createComment("");
-          dom.appendChild(el0, el1);
           return el0;
         },
         buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var morphs = new Array(3);
+          var morphs = new Array(2);
           morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
           morphs[1] = dom.createMorphAt(fragment, 2, 2, contextualElement);
-          morphs[2] = dom.createMorphAt(fragment, 4, 4, contextualElement);
           dom.insertBoundary(fragment, 0);
           dom.insertBoundary(fragment, null);
           return morphs;
         },
-        statements: [["block", "if", [["get", "label", ["loc", [null, [2, 10], [2, 15]]]]], [], 0, 1, ["loc", [null, [2, 4], [24, 11]]]], ["block", "if", [["get", "v_icons", ["loc", [null, [26, 10], [26, 17]]]]], [], 2, null, ["loc", [null, [26, 4], [28, 11]]]], ["block", "unless", [["get", "form.isInline", ["loc", [null, [31, 14], [31, 27]]]]], [], 3, null, ["loc", [null, [31, 4], [35, 15]]]]],
+        statements: [["block", "if", [["get", "label", ["loc", [null, [2, 10], [2, 15]]]]], [], 0, 1, ["loc", [null, [2, 4], [42, 11]]]], ["block", "unless", [["get", "form.isInline", ["loc", [null, [45, 14], [45, 27]]]]], [], 2, null, ["loc", [null, [45, 4], [49, 15]]]]],
         locals: [],
-        templates: [child0, child1, child2, child3]
+        templates: [child0, child1, child2]
       };
     })();
     var child1 = (function () {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
-              "line": 36,
+              "line": 50,
               "column": 0
             },
             "end": {
-              "line": 38,
+              "line": 52,
               "column": 0
             }
           },
@@ -5444,7 +5731,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
           morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
           return morphs;
         },
-        statements: [["content", "yield", ["loc", [null, [37, 4], [37, 13]]]]],
+        statements: [["content", "yield", ["loc", [null, [51, 4], [51, 13]]]]],
         locals: [],
         templates: []
       };
@@ -5455,7 +5742,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5463,7 +5750,7 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
             "column": 0
           },
           "end": {
-            "line": 39,
+            "line": 53,
             "column": 0
           }
         },
@@ -5486,9 +5773,170 @@ define("meg/templates/components/formgroup/form-group", ["exports"], function (e
         dom.insertBoundary(fragment, null);
         return morphs;
       },
-      statements: [["block", "unless", [["get", "template", ["loc", [null, [1, 10], [1, 18]]]]], [], 0, 1, ["loc", [null, [1, 0], [38, 11]]]]],
+      statements: [["block", "unless", [["get", "template", ["loc", [null, [1, 10], [1, 18]]]]], [], 0, 1, ["loc", [null, [1, 0], [52, 11]]]]],
       locals: [],
       templates: [child0, child1]
+    };
+  })());
+});
+define("meg/templates/components/host-info", ["exports"], function (exports) {
+  exports["default"] = Ember.HTMLBars.template((function () {
+    var child0 = (function () {
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.5.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 15,
+              "column": 6
+            },
+            "end": {
+              "line": 18,
+              "column": 6
+            }
+          },
+          "moduleName": "meg/templates/components/host-info.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("button");
+          dom.setAttribute(el1, "class", "button");
+          var el2 = dom.createTextNode("Add Host");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("button");
+          dom.setAttribute(el1, "class", "button");
+          var el2 = dom.createTextNode("Done");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var element0 = dom.childAt(fragment, [1]);
+          var element1 = dom.childAt(fragment, [3]);
+          var morphs = new Array(2);
+          morphs[0] = dom.createElementMorph(element0);
+          morphs[1] = dom.createElementMorph(element1);
+          return morphs;
+        },
+        statements: [["element", "action", ["validateAndAuthenticate"], [], ["loc", [null, [16, 31], [16, 67]]]], ["element", "action", ["done"], [], ["loc", [null, [17, 31], [17, 48]]]]],
+        locals: [],
+        templates: []
+      };
+    })();
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": ["multiple-nodes", "wrong-type"]
+        },
+        "revision": "Ember@2.5.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 19,
+            "column": 0
+          }
+        },
+        "moduleName": "meg/templates/components/host-info.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("div");
+        dom.setAttribute(el1, "class", "row col-md-12");
+        var el2 = dom.createTextNode("\n     ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "col-md-3");
+        var el3 = dom.createTextNode("\n       ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("h3");
+        var el4 = dom.createComment("");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createComment("");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n     ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n        ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "col-md-3");
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n        ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n        ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "col-md-3");
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n        ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n        ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "col-md-3");
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n        ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n  ");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element2 = dom.childAt(fragment, [0]);
+        var element3 = dom.childAt(element2, [1, 1]);
+        var morphs = new Array(6);
+        morphs[0] = dom.createMorphAt(element3, 0, 0);
+        morphs[1] = dom.createMorphAt(element3, 1, 1);
+        morphs[2] = dom.createMorphAt(dom.childAt(element2, [3]), 1, 1);
+        morphs[3] = dom.createMorphAt(dom.childAt(element2, [5]), 1, 1);
+        morphs[4] = dom.createMorphAt(dom.childAt(element2, [7]), 1, 1);
+        morphs[5] = dom.createMorphAt(fragment, 2, 2, contextualElement);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [["inline", "t", ["step2.host"], [], ["loc", [null, [3, 11], [3, 29]]]], ["content", "number", ["loc", [null, [3, 29], [3, 39]]]], ["inline", "input", [], ["value", ["subexpr", "@mut", [["get", "model.ipaddress", ["loc", [null, [6, 26], [6, 41]]]]], [], []], "placeholder", "Enter a Ip Address...", "type", "text"], ["loc", [null, [6, 12], [6, 91]]]], ["inline", "input", [], ["value", ["subexpr", "@mut", [["get", "model.username", ["loc", [null, [9, 26], [9, 40]]]]], [], []], "placeholder", "Enter a name...", "type", "text"], ["loc", [null, [9, 12], [9, 84]]]], ["inline", "input", [], ["value", ["subexpr", "@mut", [["get", "model.password", ["loc", [null, [12, 26], [12, 40]]]]], [], []], "placeholder", "And password...", "type", "password"], ["loc", [null, [12, 12], [12, 88]]]], ["block", "if", [["get", "isButtonVisible", ["loc", [null, [15, 12], [15, 27]]]]], [], 0, null, ["loc", [null, [15, 6], [18, 13]]]]],
+      locals: [],
+      templates: [child0]
     };
   })());
 });
@@ -5500,7 +5948,7 @@ define("meg/templates/components/ivy-tab-list", ["exports"], function (exports) 
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5546,7 +5994,7 @@ define("meg/templates/components/ivy-tabs", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5584,6 +6032,52 @@ define("meg/templates/components/ivy-tabs", ["exports"], function (exports) {
     };
   })());
 });
+define("meg/templates/components/material-form-label", ["exports"], function (exports) {
+  exports["default"] = Ember.HTMLBars.template((function () {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "triple-curlies"
+        },
+        "revision": "Ember@2.5.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 47
+          }
+        },
+        "moduleName": "meg/templates/components/material-form-label.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("label");
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element0 = dom.childAt(fragment, [0]);
+        var morphs = new Array(2);
+        morphs[0] = dom.createAttrMorph(element0, 'for');
+        morphs[1] = dom.createMorphAt(element0, 0, 0);
+        return morphs;
+      },
+      statements: [["attribute", "for", ["concat", [["get", "labelViewName", ["loc", [null, [1, 14], [1, 27]]]]]]], ["content", "text", ["loc", [null, [1, 31], [1, 39]]]]],
+      locals: [],
+      templates: []
+    };
+  })());
+});
 define("meg/templates/components/notification-container", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
     var child0 = (function () {
@@ -5593,7 +6087,7 @@ define("meg/templates/components/notification-container", ["exports"], function 
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -5637,7 +6131,7 @@ define("meg/templates/components/notification-container", ["exports"], function 
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5680,7 +6174,7 @@ define("meg/templates/components/notification-message", ["exports"], function (e
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -5722,7 +6216,7 @@ define("meg/templates/components/notification-message", ["exports"], function (e
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -5764,7 +6258,7 @@ define("meg/templates/components/notification-message", ["exports"], function (e
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -5810,7 +6304,7 @@ define("meg/templates/components/notification-message", ["exports"], function (e
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5898,7 +6392,7 @@ define("meg/templates/components/paper-autocomplete-highlight", ["exports"], fun
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5943,7 +6437,7 @@ define("meg/templates/components/paper-autocomplete-item", ["exports"], function
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -5986,7 +6480,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -6030,7 +6524,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -6071,7 +6565,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -6110,7 +6604,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -6157,7 +6651,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -6203,7 +6697,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
               return {
                 meta: {
                   "fragmentReason": false,
-                  "revision": "Ember@2.4.5",
+                  "revision": "Ember@2.5.1",
                   "loc": {
                     "source": null,
                     "start": {
@@ -6246,7 +6740,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
                 return {
                   meta: {
                     "fragmentReason": false,
-                    "revision": "Ember@2.4.5",
+                    "revision": "Ember@2.5.1",
                     "loc": {
                       "source": null,
                       "start": {
@@ -6288,7 +6782,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
                 return {
                   meta: {
                     "fragmentReason": false,
-                    "revision": "Ember@2.4.5",
+                    "revision": "Ember@2.5.1",
                     "loc": {
                       "source": null,
                       "start": {
@@ -6329,7 +6823,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
               return {
                 meta: {
                   "fragmentReason": false,
-                  "revision": "Ember@2.4.5",
+                  "revision": "Ember@2.5.1",
                   "loc": {
                     "source": null,
                     "start": {
@@ -6368,7 +6862,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -6407,7 +6901,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -6451,7 +6945,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
               return {
                 meta: {
                   "fragmentReason": false,
-                  "revision": "Ember@2.4.5",
+                  "revision": "Ember@2.5.1",
                   "loc": {
                     "source": null,
                     "start": {
@@ -6496,7 +6990,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
                 return {
                   meta: {
                     "fragmentReason": false,
-                    "revision": "Ember@2.4.5",
+                    "revision": "Ember@2.5.1",
                     "loc": {
                       "source": null,
                       "start": {
@@ -6540,7 +7034,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
                 return {
                   meta: {
                     "fragmentReason": false,
-                    "revision": "Ember@2.4.5",
+                    "revision": "Ember@2.5.1",
                     "loc": {
                       "source": null,
                       "start": {
@@ -6583,7 +7077,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
               return {
                 meta: {
                   "fragmentReason": false,
-                  "revision": "Ember@2.4.5",
+                  "revision": "Ember@2.5.1",
                   "loc": {
                     "source": null,
                     "start": {
@@ -6622,7 +7116,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -6661,7 +7155,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -6700,7 +7194,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -6740,7 +7234,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -6781,7 +7275,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -6824,7 +7318,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -6866,7 +7360,7 @@ define("meg/templates/components/paper-autocomplete", ["exports"], function (exp
           "name": "missing-wrapper",
           "problems": ["multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -6941,7 +7435,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -6983,7 +7477,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -7027,7 +7521,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7068,7 +7562,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -7110,7 +7604,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -7151,7 +7645,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7204,7 +7698,7 @@ define("meg/templates/components/paper-button", ["exports"], function (exports) 
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -7247,7 +7741,7 @@ define("meg/templates/components/paper-checkbox", ["exports"], function (exports
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7302,7 +7796,7 @@ define("meg/templates/components/paper-checkbox", ["exports"], function (exports
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7359,7 +7853,7 @@ define("meg/templates/components/paper-checkbox", ["exports"], function (exports
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -7415,7 +7909,7 @@ define("meg/templates/components/paper-grid-list", ["exports"], function (export
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -7458,7 +7952,7 @@ define("meg/templates/components/paper-grid-tile-footer", ["exports"], function 
     return {
       meta: {
         "fragmentReason": false,
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -7506,7 +8000,7 @@ define("meg/templates/components/paper-grid-tile", ["exports"], function (export
     return {
       meta: {
         "fragmentReason": false,
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -7555,7 +8049,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7601,7 +8095,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7643,7 +8137,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7685,7 +8179,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7727,7 +8221,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7782,7 +8276,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7829,7 +8323,7 @@ define("meg/templates/components/paper-input", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -7893,7 +8387,7 @@ define("meg/templates/components/paper-item", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -7944,7 +8438,7 @@ define("meg/templates/components/paper-item", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -7984,7 +8478,7 @@ define("meg/templates/components/paper-item", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8037,7 +8531,7 @@ define("meg/templates/components/paper-item", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8082,7 +8576,7 @@ define("meg/templates/components/paper-menu-container", ["exports"], function (e
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8133,7 +8627,7 @@ define("meg/templates/components/paper-menu-content-pane", ["exports"], function
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8179,7 +8673,7 @@ define("meg/templates/components/paper-menu-content", ["exports"], function (exp
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8221,7 +8715,7 @@ define("meg/templates/components/paper-menu-content", ["exports"], function (exp
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8265,7 +8759,7 @@ define("meg/templates/components/paper-menu-content", ["exports"], function (exp
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8312,7 +8806,7 @@ define("meg/templates/components/paper-menu-item", ["exports"], function (export
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -8356,7 +8850,7 @@ define("meg/templates/components/paper-menu-item", ["exports"], function (export
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8396,7 +8890,7 @@ define("meg/templates/components/paper-menu-item", ["exports"], function (export
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8440,7 +8934,7 @@ define("meg/templates/components/paper-menu-item", ["exports"], function (export
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8484,7 +8978,7 @@ define("meg/templates/components/paper-menu", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -8525,7 +9019,7 @@ define("meg/templates/components/paper-menu", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8567,7 +9061,7 @@ define("meg/templates/components/paper-menu", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8617,7 +9111,7 @@ define("meg/templates/components/paper-nav-container", ["exports"], function (ex
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8662,7 +9156,7 @@ define("meg/templates/components/paper-optgroup", ["exports"], function (exports
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8712,7 +9206,7 @@ define("meg/templates/components/paper-option", ["exports"], function (exports) 
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8757,7 +9251,7 @@ define("meg/templates/components/paper-progress-circular", ["exports"], function
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8843,7 +9337,7 @@ define("meg/templates/components/paper-progress-linear", ["exports"], function (
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -8908,7 +9402,7 @@ define("meg/templates/components/paper-radio", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -8957,7 +9451,7 @@ define("meg/templates/components/paper-radio", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9008,7 +9502,7 @@ define("meg/templates/components/paper-radio", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9067,7 +9561,7 @@ define("meg/templates/components/paper-select-container", ["exports"], function 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9111,7 +9605,7 @@ define("meg/templates/components/paper-select-container", ["exports"], function 
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9163,7 +9657,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
               return {
                 meta: {
                   "fragmentReason": false,
-                  "revision": "Ember@2.4.5",
+                  "revision": "Ember@2.5.1",
                   "loc": {
                     "source": null,
                     "start": {
@@ -9207,7 +9701,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
               return {
                 meta: {
                   "fragmentReason": false,
-                  "revision": "Ember@2.4.5",
+                  "revision": "Ember@2.5.1",
                   "loc": {
                     "source": null,
                     "start": {
@@ -9248,7 +9742,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -9287,7 +9781,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -9326,7 +9820,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -9365,7 +9859,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9407,7 +9901,7 @@ define("meg/templates/components/paper-select-core", ["exports"], function (expo
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9457,7 +9951,7 @@ define("meg/templates/components/paper-select-value", ["exports"], function (exp
           "name": "missing-wrapper",
           "problems": ["multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9506,7 +10000,7 @@ define("meg/templates/components/paper-select", ["exports"], function (exports) 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9553,7 +10047,7 @@ define("meg/templates/components/paper-select", ["exports"], function (exports) 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9595,7 +10089,7 @@ define("meg/templates/components/paper-select", ["exports"], function (exports) 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9639,7 +10133,7 @@ define("meg/templates/components/paper-select", ["exports"], function (exports) 
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9694,7 +10188,7 @@ define("meg/templates/components/paper-sidenav-toggle", ["exports"], function (e
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9738,7 +10232,7 @@ define("meg/templates/components/paper-sidenav", ["exports"], function (exports)
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -9779,7 +10273,7 @@ define("meg/templates/components/paper-sidenav", ["exports"], function (exports)
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -9821,7 +10315,7 @@ define("meg/templates/components/paper-sidenav", ["exports"], function (exports)
           "name": "missing-wrapper",
           "problems": ["wrong-type", "multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9870,7 +10364,7 @@ define("meg/templates/components/paper-slider", ["exports"], function (exports) 
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -9985,7 +10479,7 @@ define("meg/templates/components/paper-subheader", ["exports"], function (export
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -10040,7 +10534,7 @@ define("meg/templates/components/paper-switch", ["exports"], function (exports) 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -10089,7 +10583,7 @@ define("meg/templates/components/paper-switch", ["exports"], function (exports) 
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -10140,7 +10634,7 @@ define("meg/templates/components/paper-switch", ["exports"], function (exports) 
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -10207,473 +10701,6 @@ define("meg/templates/components/paper-switch", ["exports"], function (exports) 
     };
   })());
 });
-define("meg/templates/components/steps/step1", ["exports"], function (exports) {
-  exports["default"] = Ember.HTMLBars.template((function () {
-    var child0 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 39,
-              "column": 3
-            },
-            "end": {
-              "line": 39,
-              "column": 58
-            }
-          },
-          "moduleName": "meg/templates/components/steps/step1.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("compare editions");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
-    var child1 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 47,
-              "column": 2
-            },
-            "end": {
-              "line": 47,
-              "column": 49
-            }
-          },
-          "moduleName": "meg/templates/components/steps/step1.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("Start");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
-    return {
-      meta: {
-        "fragmentReason": {
-          "name": "triple-curlies"
-        },
-        "revision": "Ember@2.4.5",
-        "loc": {
-          "source": null,
-          "start": {
-            "line": 1,
-            "column": 0
-          },
-          "end": {
-            "line": 54,
-            "column": 0
-          }
-        },
-        "moduleName": "meg/templates/components/steps/step1.hbs"
-      },
-      isEmpty: false,
-      arity: 0,
-      cachedFragment: null,
-      hasRendered: false,
-      buildFragment: function buildFragment(dom) {
-        var el0 = dom.createDocumentFragment();
-        var el1 = dom.createElement("div");
-        dom.setAttribute(el1, "class", "landing-centered-wrapper");
-        var el2 = dom.createTextNode("\n  ");
-        dom.appendChild(el1, el2);
-        var el2 = dom.createElement("div");
-        dom.setAttribute(el2, "class", "large-12 columns");
-        dom.setAttribute(el2, "id", "hero-copy");
-        var el3 = dom.createTextNode("\n    ");
-        dom.appendChild(el2, el3);
-        var el3 = dom.createElement("h2");
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n  ");
-        dom.appendChild(el2, el3);
-        dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n   ");
-        dom.appendChild(el1, el2);
-        var el2 = dom.createElement("div");
-        dom.setAttribute(el2, "class", "large-12 columns");
-        var el3 = dom.createTextNode("\n     ");
-        dom.appendChild(el2, el3);
-        var el3 = dom.createElement("div");
-        dom.setAttribute(el3, "class", "large-6 columns");
-        var el4 = dom.createTextNode("\n       ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createElement("h3");
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n       ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createElement("h3");
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n       ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createElement("div");
-        dom.setAttribute(el4, "class", "large-12 columns");
-        var el5 = dom.createTextNode("\n         ");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createElement("div");
-        dom.setAttribute(el5, "class", "large-6 columns");
-        var el6 = dom.createTextNode("\n           ");
-        dom.appendChild(el5, el6);
-        var el6 = dom.createElement("div");
-        dom.setAttribute(el6, "class", "well well-lg");
-        var el7 = dom.createTextNode("\n             ");
-        dom.appendChild(el6, el7);
-        var el7 = dom.createElement("div");
-        dom.setAttribute(el7, "class", "large-12");
-        var el8 = dom.createTextNode("\n                ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("div");
-        dom.setAttribute(el8, "class", "row");
-        var el9 = dom.createTextNode("\n                  ");
-        dom.appendChild(el8, el9);
-        var el9 = dom.createElement("span");
-        dom.setAttribute(el9, "class", "label label-warning");
-        var el10 = dom.createComment("");
-        dom.appendChild(el9, el10);
-        dom.appendChild(el8, el9);
-        var el9 = dom.createTextNode("\n                ");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n                 ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("h3");
-        var el9 = dom.createComment("");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n                 ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("h3");
-        var el9 = dom.createComment("");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n                ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("div");
-        dom.setAttribute(el8, "class", "row");
-        var el9 = dom.createTextNode("\n                   ");
-        dom.appendChild(el8, el9);
-        var el9 = dom.createComment("");
-        dom.appendChild(el8, el9);
-        var el9 = dom.createTextNode("\n                ");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n             ");
-        dom.appendChild(el7, el8);
-        dom.appendChild(el6, el7);
-        var el7 = dom.createTextNode("\n          ");
-        dom.appendChild(el6, el7);
-        dom.appendChild(el5, el6);
-        var el6 = dom.createTextNode("\n        ");
-        dom.appendChild(el5, el6);
-        dom.appendChild(el4, el5);
-        var el5 = dom.createTextNode("\n        ");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createElement("div");
-        dom.setAttribute(el5, "class", "large-6 columns");
-        var el6 = dom.createTextNode("\n         ");
-        dom.appendChild(el5, el6);
-        var el6 = dom.createElement("div");
-        dom.setAttribute(el6, "class", "well well-lg");
-        var el7 = dom.createTextNode("\n          ");
-        dom.appendChild(el6, el7);
-        var el7 = dom.createElement("div");
-        dom.setAttribute(el7, "class", "large-12");
-        var el8 = dom.createTextNode("\n             ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("div");
-        dom.setAttribute(el8, "class", "row");
-        var el9 = dom.createTextNode("\n                 ");
-        dom.appendChild(el8, el9);
-        var el9 = dom.createElement("span");
-        dom.setAttribute(el9, "class", "label label-warning");
-        var el10 = dom.createComment("");
-        dom.appendChild(el9, el10);
-        dom.appendChild(el8, el9);
-        var el9 = dom.createTextNode("\n             ");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n             ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("h3");
-        var el9 = dom.createComment("");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n             ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("h3");
-        var el9 = dom.createComment("");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n             ");
-        dom.appendChild(el7, el8);
-        var el8 = dom.createElement("div");
-        dom.setAttribute(el8, "class", "row");
-        var el9 = dom.createTextNode("\n                 ");
-        dom.appendChild(el8, el9);
-        var el9 = dom.createComment("");
-        dom.appendChild(el8, el9);
-        var el9 = dom.createTextNode("\n             ");
-        dom.appendChild(el8, el9);
-        dom.appendChild(el7, el8);
-        var el8 = dom.createTextNode("\n          ");
-        dom.appendChild(el7, el8);
-        dom.appendChild(el6, el7);
-        var el7 = dom.createTextNode("\n        ");
-        dom.appendChild(el6, el7);
-        dom.appendChild(el5, el6);
-        var el6 = dom.createTextNode("\n      ");
-        dom.appendChild(el5, el6);
-        dom.appendChild(el4, el5);
-        var el5 = dom.createTextNode("\n   ");
-        dom.appendChild(el4, el5);
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n   ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n  ");
-        dom.appendChild(el3, el4);
-        dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n  ");
-        dom.appendChild(el2, el3);
-        var el3 = dom.createElement("div");
-        dom.setAttribute(el3, "class", "large-6  columns");
-        var el4 = dom.createTextNode("\n    ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createElement("h3");
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n    ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createElement("h3");
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n    ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n    ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n    ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n  ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n ");
-        dom.appendChild(el3, el4);
-        dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n ");
-        dom.appendChild(el2, el3);
-        dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n\n\n\n");
-        dom.appendChild(el1, el2);
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
-        return el0;
-      },
-      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-        var element0 = dom.childAt(fragment, [0]);
-        var element1 = dom.childAt(element0, [3]);
-        var element2 = dom.childAt(element1, [1]);
-        var element3 = dom.childAt(element2, [5]);
-        var element4 = dom.childAt(element3, [1, 1, 1]);
-        var element5 = dom.childAt(element3, [3, 1, 1]);
-        var element6 = dom.childAt(element1, [3]);
-        var morphs = new Array(18);
-        morphs[0] = dom.createMorphAt(dom.childAt(element0, [1, 1]), 0, 0);
-        morphs[1] = dom.createMorphAt(dom.childAt(element2, [1]), 0, 0);
-        morphs[2] = dom.createMorphAt(dom.childAt(element2, [3]), 0, 0);
-        morphs[3] = dom.createMorphAt(dom.childAt(element4, [1, 1]), 0, 0);
-        morphs[4] = dom.createMorphAt(dom.childAt(element4, [3]), 0, 0);
-        morphs[5] = dom.createMorphAt(dom.childAt(element4, [5]), 0, 0);
-        morphs[6] = dom.createMorphAt(dom.childAt(element4, [7]), 1, 1);
-        morphs[7] = dom.createMorphAt(dom.childAt(element5, [1, 1]), 0, 0);
-        morphs[8] = dom.createMorphAt(dom.childAt(element5, [3]), 0, 0);
-        morphs[9] = dom.createMorphAt(dom.childAt(element5, [5]), 0, 0);
-        morphs[10] = dom.createMorphAt(dom.childAt(element5, [7]), 1, 1);
-        morphs[11] = dom.createMorphAt(element2, 7, 7);
-        morphs[12] = dom.createMorphAt(dom.childAt(element6, [1]), 0, 0);
-        morphs[13] = dom.createMorphAt(dom.childAt(element6, [3]), 0, 0);
-        morphs[14] = dom.createMorphAt(element6, 5, 5);
-        morphs[15] = dom.createMorphAt(element6, 7, 7);
-        morphs[16] = dom.createMorphAt(element6, 9, 9);
-        morphs[17] = dom.createMorphAt(element6, 11, 11);
-        return morphs;
-      },
-      statements: [["inline", "t", ["main.step1.title"], [], ["loc", [null, [3, 8], [3, 32]]]], ["inline", "t", ["main.step1.type1.title"], [], ["loc", [null, [7, 11], [7, 41]]]], ["inline", "t", ["main.step1.type1.price"], [], ["loc", [null, [8, 11], [8, 41]]]], ["inline", "t", ["main.step1.type1.dash"], [], ["loc", [null, [14, 52], [14, 81]]]], ["inline", "t", ["main.step1.type1.minified_edition_name"], [], ["loc", [null, [16, 21], [16, 67]]]], ["inline", "t", ["main.step1.type1.edition"], [], ["loc", [null, [17, 21], [17, 53]]]], ["inline", "paper-radio", [], ["toggle", true, "label", "Select"], ["loc", [null, [19, 19], [19, 62]]]], ["inline", "t", ["main.step1.type1.dash"], [], ["loc", [null, [28, 51], [28, 80]]]], ["inline", "t", ["main.step1.type1.complete_edition_name"], [], ["loc", [null, [30, 17], [30, 63]]]], ["inline", "t", ["main.step1.type1.edition"], [], ["loc", [null, [31, 17], [31, 49]]]], ["inline", "paper-radio", [], ["toggle", true, "label", "Select"], ["loc", [null, [33, 17], [33, 60]]]], ["block", "paper-button", [], ["raised", true, "warn", true], 0, null, ["loc", [null, [39, 3], [39, 75]]]], ["inline", "t", ["main.step1.type2.title"], [], ["loc", [null, [42, 8], [42, 38]]]], ["inline", "t", ["main.step1.type2.description"], [], ["loc", [null, [43, 8], [43, 44]]]], ["inline", "paper-input", [], ["label", "IP Address"], ["loc", [null, [44, 4], [44, 38]]]], ["inline", "paper-input", [], ["label", "Username"], ["loc", [null, [45, 4], [45, 36]]]], ["inline", "paper-input", [], ["label", "Password"], ["loc", [null, [46, 4], [46, 36]]]], ["block", "paper-button", [], ["raised", true, "primary", true], 1, null, ["loc", [null, [47, 2], [47, 66]]]]],
-      locals: [],
-      templates: [child0, child1]
-    };
-  })());
-});
-define("meg/templates/components/steps/step2", ["exports"], function (exports) {
-  exports["default"] = Ember.HTMLBars.template((function () {
-    return {
-      meta: {
-        "fragmentReason": {
-          "name": "triple-curlies"
-        },
-        "revision": "Ember@2.4.5",
-        "loc": {
-          "source": null,
-          "start": {
-            "line": 1,
-            "column": 0
-          },
-          "end": {
-            "line": 6,
-            "column": 0
-          }
-        },
-        "moduleName": "meg/templates/components/steps/step2.hbs"
-      },
-      isEmpty: false,
-      arity: 0,
-      cachedFragment: null,
-      hasRendered: false,
-      buildFragment: function buildFragment(dom) {
-        var el0 = dom.createDocumentFragment();
-        var el1 = dom.createElement("div");
-        dom.setAttribute(el1, "class", "landing-centered-wrapper");
-        var el2 = dom.createTextNode("\n  ");
-        dom.appendChild(el1, el2);
-        var el2 = dom.createElement("div");
-        dom.setAttribute(el2, "class", "large-12 columns");
-        dom.setAttribute(el2, "id", "hero-copy");
-        var el3 = dom.createTextNode("\n    ");
-        dom.appendChild(el2, el3);
-        var el3 = dom.createElement("h2");
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n  ");
-        dom.appendChild(el2, el3);
-        dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n");
-        dom.appendChild(el1, el2);
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
-        return el0;
-      },
-      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-        var morphs = new Array(1);
-        morphs[0] = dom.createMorphAt(dom.childAt(fragment, [0, 1, 1]), 0, 0);
-        return morphs;
-      },
-      statements: [["inline", "t", ["main.step2.title"], [], ["loc", [null, [3, 8], [3, 32]]]]],
-      locals: [],
-      templates: []
-    };
-  })());
-});
-define("meg/templates/components/steps/step3", ["exports"], function (exports) {
-  exports["default"] = Ember.HTMLBars.template((function () {
-    return {
-      meta: {
-        "fragmentReason": {
-          "name": "triple-curlies"
-        },
-        "revision": "Ember@2.4.5",
-        "loc": {
-          "source": null,
-          "start": {
-            "line": 1,
-            "column": 0
-          },
-          "end": {
-            "line": 6,
-            "column": 0
-          }
-        },
-        "moduleName": "meg/templates/components/steps/step3.hbs"
-      },
-      isEmpty: false,
-      arity: 0,
-      cachedFragment: null,
-      hasRendered: false,
-      buildFragment: function buildFragment(dom) {
-        var el0 = dom.createDocumentFragment();
-        var el1 = dom.createElement("div");
-        dom.setAttribute(el1, "class", "landing-centered-wrapper");
-        var el2 = dom.createTextNode("\n  ");
-        dom.appendChild(el1, el2);
-        var el2 = dom.createElement("div");
-        dom.setAttribute(el2, "class", "large-12 columns");
-        dom.setAttribute(el2, "id", "hero-copy");
-        var el3 = dom.createTextNode("\n    ");
-        dom.appendChild(el2, el3);
-        var el3 = dom.createElement("h2");
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n  ");
-        dom.appendChild(el2, el3);
-        dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n");
-        dom.appendChild(el1, el2);
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
-        return el0;
-      },
-      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-        var morphs = new Array(1);
-        morphs[0] = dom.createMorphAt(dom.childAt(fragment, [0, 1, 1]), 0, 0);
-        return morphs;
-      },
-      statements: [["inline", "t", ["main.step3.title"], [], ["loc", [null, [3, 8], [3, 32]]]]],
-      locals: [],
-      templates: []
-    };
-  })());
-});
 define("meg/templates/components/transition-group", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
     return {
@@ -10682,7 +10709,7 @@ define("meg/templates/components/transition-group", ["exports"], function (expor
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -10729,7 +10756,7 @@ define("meg/templates/error", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -10771,7 +10798,7 @@ define("meg/templates/error", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -10809,7 +10836,7 @@ define("meg/templates/error", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -10855,7 +10882,7 @@ define("meg/templates/error404", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["multiple-nodes"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -10937,7 +10964,7 @@ define("meg/templates/error404", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -10976,280 +11003,12 @@ define("meg/templates/error404", ["exports"], function (exports) {
 });
 define("meg/templates/footer", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
-    var child0 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 7,
-              "column": 4
-            },
-            "end": {
-              "line": 13,
-              "column": 4
-            }
-          },
-          "moduleName": "meg/templates/footer.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("      ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("div");
-          dom.setAttribute(el1, "class", "footer-elem");
-          var el2 = dom.createTextNode("\n        ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("h3");
-          dom.setAttribute(el2, "class", "footer-title");
-          var el3 = dom.createTextNode("©Travis CI, GmbH");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n        ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("p");
-          var el3 = dom.createTextNode("Rigaer Straße 8");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("br");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("10247 Berlin, Germany ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("br");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("\n        ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("a");
-          dom.setAttribute(el3, "href", "https://docs.travis-ci.com/imprint.html");
-          var el4 = dom.createTextNode("Imprint");
-          dom.appendChild(el3, el4);
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n      ");
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
-    var child1 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 18,
-              "column": 8
-            },
-            "end": {
-              "line": 22,
-              "column": 8
-            }
-          },
-          "moduleName": "meg/templates/footer.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("          ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("li");
-          var el2 = dom.createElement("a");
-          dom.setAttribute(el2, "href", "https://blog.travis-ci.com/");
-          var el3 = dom.createTextNode("Blog");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n          ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("li");
-          var el2 = dom.createElement("a");
-          dom.setAttribute(el2, "href", "mailto:support@travis-ci.com");
-          var el3 = dom.createTextNode("Email");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n          ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("li");
-          var el2 = dom.createElement("a");
-          dom.setAttribute(el2, "href", "https://twitter.com/travisci");
-          var el3 = dom.createTextNode("Twitter");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
-    var child2 = (function () {
-      var child0 = (function () {
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 26,
-                "column": 6
-              },
-              "end": {
-                "line": 35,
-                "column": 6
-              }
-            },
-            "moduleName": "meg/templates/footer.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("div");
-            dom.setAttribute(el1, "class", "footer-elem");
-            var el2 = dom.createTextNode("\n          ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createElement("h3");
-            dom.setAttribute(el2, "class", "footer-title");
-            var el3 = dom.createTextNode("Legal");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n          ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createElement("ul");
-            var el3 = dom.createTextNode("\n            ");
-            dom.appendChild(el2, el3);
-            var el3 = dom.createElement("li");
-            var el4 = dom.createElement("a");
-            dom.setAttribute(el4, "href", "https://docs.travis-ci.com/imprint.html");
-            var el5 = dom.createTextNode("Imprint");
-            dom.appendChild(el4, el5);
-            dom.appendChild(el3, el4);
-            dom.appendChild(el2, el3);
-            var el3 = dom.createTextNode("\n            ");
-            dom.appendChild(el2, el3);
-            var el3 = dom.createElement("li");
-            var el4 = dom.createElement("a");
-            dom.setAttribute(el4, "href", "https://billing.travis-ci.com/pages/terms");
-            var el5 = dom.createTextNode("Terms of Service");
-            dom.appendChild(el4, el5);
-            dom.appendChild(el3, el4);
-            dom.appendChild(el2, el3);
-            var el3 = dom.createTextNode("\n            ");
-            dom.appendChild(el2, el3);
-            var el3 = dom.createElement("li");
-            var el4 = dom.createElement("a");
-            dom.setAttribute(el4, "href", "https://billing.travis-ci.com/pages/security");
-            var el5 = dom.createTextNode("Security Statement");
-            dom.appendChild(el4, el5);
-            dom.appendChild(el3, el4);
-            dom.appendChild(el2, el3);
-            var el3 = dom.createTextNode("\n          ");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n        ");
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes() {
-            return [];
-          },
-          statements: [],
-          locals: [],
-          templates: []
-        };
-      })();
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 25,
-              "column": 4
-            },
-            "end": {
-              "line": 40,
-              "column": 4
-            }
-          },
-          "moduleName": "meg/templates/footer.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createComment("");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n      ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("div");
-          dom.setAttribute(el1, "class", "footer-elem");
-          var el2 = dom.createTextNode("\n        ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createComment("");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n      ");
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var morphs = new Array(2);
-          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-          morphs[1] = dom.createMorphAt(dom.childAt(fragment, [2]), 1, 1);
-          dom.insertBoundary(fragment, 0);
-          return morphs;
-        },
-        statements: [["block", "if", [["get", "config.pro", ["loc", [null, [26, 12], [26, 22]]]]], [], 0, null, ["loc", [null, [26, 6], [35, 13]]]], ["content", "travis-status", ["loc", [null, [38, 8], [38, 25]]]]],
-        locals: [],
-        templates: [child0]
-      };
-    })();
     return {
       meta: {
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -11257,8 +11016,8 @@ define("meg/templates/footer", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 43,
-            "column": 0
+            "line": 35,
+            "column": 9
           }
         },
         "moduleName": "meg/templates/footer.hbs"
@@ -11288,11 +11047,34 @@ define("meg/templates/footer", ["exports"], function (exports) {
         var el4 = dom.createTextNode("\n    ");
         dom.appendChild(el3, el4);
         dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n\n");
+        var el3 = dom.createTextNode("\n      ");
         dom.appendChild(el2, el3);
-        var el3 = dom.createComment("");
+        var el3 = dom.createElement("div");
+        dom.setAttribute(el3, "class", "footer-elem");
+        var el4 = dom.createTextNode("\n        ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("h3");
+        dom.setAttribute(el4, "class", "footer-title");
+        var el5 = dom.createTextNode("DET.io");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n        ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("p");
+        var el5 = dom.createTextNode("\n        ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("a");
+        dom.setAttribute(el5, "href", "https://docs.travis-ci.com/imprint.html");
+        var el6 = dom.createTextNode("Imprint");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n        ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n      ");
+        dom.appendChild(el3, el4);
         dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("    ");
+        var el3 = dom.createTextNode("\n    ");
         dom.appendChild(el2, el3);
         var el3 = dom.createElement("div");
         dom.setAttribute(el3, "class", "footer-elem");
@@ -11311,45 +11093,125 @@ define("meg/templates/footer", ["exports"], function (exports) {
         var el5 = dom.createElement("li");
         var el6 = dom.createElement("a");
         dom.setAttribute(el6, "href", "https://docs.travis-ci.com");
-        var el7 = dom.createTextNode("Documentation");
+        var el7 = dom.createTextNode("Documentation2");
         dom.appendChild(el6, el7);
         dom.appendChild(el5, el6);
         dom.appendChild(el4, el5);
-        var el5 = dom.createTextNode("\n");
+        var el5 = dom.createTextNode("\n          ");
         dom.appendChild(el4, el5);
-        var el5 = dom.createComment("");
+        var el5 = dom.createElement("li");
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "href", "https://blog.travis-ci.com/");
+        var el7 = dom.createTextNode("Blog2");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
         dom.appendChild(el4, el5);
-        var el5 = dom.createTextNode("      ");
+        var el5 = dom.createTextNode("\n          ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("li");
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "href", "mailto:support@travis-ci.com");
+        var el7 = dom.createTextNode("Email2");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n          ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("li");
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "href", "https://twitter.com/travisci");
+        var el7 = dom.createTextNode("Twitter2");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n      ");
         dom.appendChild(el4, el5);
         dom.appendChild(el3, el4);
         var el4 = dom.createTextNode("\n    ");
         dom.appendChild(el3, el4);
         dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n");
+        var el3 = dom.createTextNode("\n        ");
         dom.appendChild(el2, el3);
-        var el3 = dom.createComment("");
+        var el3 = dom.createElement("div");
+        dom.setAttribute(el3, "class", "footer-elem");
+        var el4 = dom.createTextNode("\n          ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("h3");
+        dom.setAttribute(el4, "class", "footer-title");
+        var el5 = dom.createTextNode("Legal");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n          ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("ul");
+        var el5 = dom.createTextNode("\n            ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("li");
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "href", "https://docs.travis-ci.com/imprint.html");
+        var el7 = dom.createTextNode("Imprint2");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n            ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("li");
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "href", "https://billing.travis-ci.com/pages/terms");
+        var el7 = dom.createTextNode("Terms of Service2");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n            ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("li");
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "href", "https://billing.travis-ci.com/pages/security");
+        var el7 = dom.createTextNode("Security Statement2");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n          ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n        ");
+        dom.appendChild(el3, el4);
         dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("  ");
+        var el3 = dom.createTextNode("\n      ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "footer-copyright");
+        var el3 = dom.createTextNode("\n        ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("div");
+        dom.setAttribute(el3, "class", "container");
+        var el4 = dom.createTextNode("\n          ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("a");
+        dom.setAttribute(el4, "href", "http://det.io");
+        var el5 = dom.createTextNode("DET.io");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode(" © 2016 All Rights Reserved.\n    ");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n  ");
         dom.appendChild(el2, el3);
         dom.appendChild(el1, el2);
         var el2 = dom.createTextNode("\n");
         dom.appendChild(el1, el2);
         dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
         return el0;
       },
-      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-        var element0 = dom.childAt(fragment, [0, 1]);
-        var morphs = new Array(3);
-        morphs[0] = dom.createMorphAt(element0, 3, 3);
-        morphs[1] = dom.createMorphAt(dom.childAt(element0, [5, 3]), 3, 3);
-        morphs[2] = dom.createMorphAt(element0, 7, 7);
-        return morphs;
+      buildRenderNodes: function buildRenderNodes() {
+        return [];
       },
-      statements: [["block", "unless", [["get", "config.enterprise", ["loc", [null, [7, 14], [7, 31]]]]], [], 0, null, ["loc", [null, [7, 4], [13, 15]]]], ["block", "unless", [["get", "config.enterprise", ["loc", [null, [18, 18], [18, 35]]]]], [], 1, null, ["loc", [null, [18, 8], [22, 19]]]], ["block", "unless", [["get", "config.enterprise", ["loc", [null, [25, 14], [25, 31]]]]], [], 2, null, ["loc", [null, [25, 4], [40, 15]]]]],
+      statements: [],
       locals: [],
-      templates: [child0, child1, child2]
+      templates: []
     };
   })());
 });
@@ -11360,16 +11222,16 @@ define("meg/templates/home", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
-                "line": 8,
-                "column": 2
+                "line": 11,
+                "column": 6
               },
               "end": {
-                "line": 10,
-                "column": 2
+                "line": 13,
+                "column": 6
               }
             },
             "moduleName": "meg/templates/home.hbs"
@@ -11380,13 +11242,14 @@ define("meg/templates/home", ["exports"], function (exports) {
           hasRendered: false,
           buildFragment: function buildFragment(dom) {
             var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("			");
+            var el1 = dom.createTextNode("         ");
             dom.appendChild(el0, el1);
-            var el1 = dom.createElement("button");
-            dom.setAttribute(el1, "class", "button");
-            var el2 = dom.createElement("img");
-            dom.setAttribute(el2, "src", "../images/landing-page/sign-in-mascot.svg");
-            dom.setAttribute(el2, "class", "sign-in-mascot");
+            var el1 = dom.createElement("a");
+            dom.setAttribute(el1, "class", "btn-large waves-effect waves-light mainColor");
+            var el2 = dom.createElement("i");
+            dom.setAttribute(el2, "class", "material-icons right");
+            var el3 = dom.createTextNode("cloud");
+            dom.appendChild(el2, el3);
             dom.appendChild(el1, el2);
             var el2 = dom.createComment("");
             dom.appendChild(el1, el2);
@@ -11402,7 +11265,7 @@ define("meg/templates/home", ["exports"], function (exports) {
             morphs[1] = dom.createMorphAt(element0, 1, 1);
             return morphs;
           },
-          statements: [["element", "action", ["signupPage"], [], ["loc", [null, [9, 11], [9, 36]]]], ["inline", "t", ["landingpage.signup"], [], ["loc", [null, [9, 128], [9, 154]]]]],
+          statements: [["element", "action", ["signupPage"], [], ["loc", [null, [12, 12], [12, 37]]]], ["inline", "t", ["landingpage.signup"], [], ["loc", [null, [12, 133], [12, 159]]]]],
           locals: [],
           templates: []
         };
@@ -11412,7 +11275,7 @@ define("meg/templates/home", ["exports"], function (exports) {
           "fragmentReason": {
             "name": "triple-curlies"
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -11420,7 +11283,7 @@ define("meg/templates/home", ["exports"], function (exports) {
               "column": 0
             },
             "end": {
-              "line": 15,
+              "line": 51,
               "column": 0
             }
           },
@@ -11432,48 +11295,203 @@ define("meg/templates/home", ["exports"], function (exports) {
         hasRendered: false,
         buildFragment: function buildFragment(dom) {
           var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("  ");
+          dom.appendChild(el0, el1);
           var el1 = dom.createElement("div");
-          dom.setAttribute(el1, "id", "landing");
-          dom.setAttribute(el1, "class", "landing");
-          var el2 = dom.createTextNode("\n  ");
+          dom.setAttribute(el1, "class", "section no-pad-bot");
+          dom.setAttribute(el1, "id", "index-banner");
+          var el2 = dom.createTextNode("\n    ");
           dom.appendChild(el1, el2);
           var el2 = dom.createElement("div");
-          dom.setAttribute(el2, "class", "row hero z-1");
+          dom.setAttribute(el2, "class", "container");
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("br");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("h1");
+          dom.setAttribute(el3, "class", "header center mainColor-text");
+          var el4 = dom.createComment("");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "class", "row center");
+          var el4 = dom.createTextNode("\n        ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createElement("h5");
+          dom.setAttribute(el4, "class", "col s12 light");
+          var el5 = dom.createComment("");
+          dom.appendChild(el4, el5);
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("br");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "class", "row center");
+          var el4 = dom.createTextNode("\n");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createComment("");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("      ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("br");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("br");
+          dom.appendChild(el2, el3);
           var el3 = dom.createTextNode("\n    ");
           dom.appendChild(el2, el3);
           var el3 = dom.createElement("div");
-          dom.setAttribute(el3, "class", "landing-centered-wrapper");
+          dom.setAttribute(el3, "class", "section");
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createComment("   Icon Section   ");
+          dom.appendChild(el3, el4);
           var el4 = dom.createTextNode("\n      ");
           dom.appendChild(el3, el4);
           var el4 = dom.createElement("div");
-          dom.setAttribute(el4, "class", "large-12 columns");
-          dom.setAttribute(el4, "id", "hero-copy");
-          var el5 = dom.createTextNode("\n		");
+          dom.setAttribute(el4, "class", "row");
+          var el5 = dom.createTextNode("\n        ");
           dom.appendChild(el4, el5);
-          var el5 = dom.createElement("h1");
-          var el6 = dom.createComment("");
+          var el5 = dom.createElement("div");
+          dom.setAttribute(el5, "class", "col s12 m4");
+          var el6 = dom.createTextNode("\n          ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("div");
+          dom.setAttribute(el6, "class", "icon-block");
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("h2");
+          dom.setAttribute(el7, "class", "center mainColor-text");
+          var el8 = dom.createElement("i");
+          dom.setAttribute(el8, "class", "material-icons");
+          var el9 = dom.createTextNode("flash_on");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("h5");
+          dom.setAttribute(el7, "class", "center offsetColor-text");
+          var el8 = dom.createTextNode("Speeds up development");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("p");
+          dom.setAttribute(el7, "class", "light");
+          var el8 = dom.createTextNode("We did most of the heavy lifting for you to provide a default stylings that incorporate our custom components. Additionally, we refined animations and transitions to provide a smoother experience for developers.");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n          ");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n        ");
           dom.appendChild(el5, el6);
           dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n		");
+          var el5 = dom.createTextNode("\n\n        ");
           dom.appendChild(el4, el5);
-          var el5 = dom.createElement("p");
-          var el6 = dom.createComment("");
+          var el5 = dom.createElement("div");
+          dom.setAttribute(el5, "class", "col s12 m4");
+          var el6 = dom.createTextNode("\n          ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("div");
+          dom.setAttribute(el6, "class", "icon-block");
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("h2");
+          dom.setAttribute(el7, "class", "center mainColor-text");
+          var el8 = dom.createElement("i");
+          dom.setAttribute(el8, "class", "material-icons");
+          var el9 = dom.createTextNode("group");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("h5");
+          dom.setAttribute(el7, "class", "center offsetColor-text");
+          var el8 = dom.createTextNode("User Experience Focused");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("p");
+          dom.setAttribute(el7, "class", "light");
+          var el8 = dom.createTextNode("By utilizing elements and principles of Material Design, we were able to create a framework that incorporates components and animations that provide more feedback to users. Additionally, a single underlying responsive system across all platforms allow for a more unified user experience.");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n          ");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n        ");
           dom.appendChild(el5, el6);
           dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n");
+          var el5 = dom.createTextNode("\n\n        ");
           dom.appendChild(el4, el5);
-          var el5 = dom.createComment("");
+          var el5 = dom.createElement("div");
+          dom.setAttribute(el5, "class", "col s12 m4");
+          var el6 = dom.createTextNode("\n          ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("div");
+          dom.setAttribute(el6, "class", "icon-block");
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("h2");
+          dom.setAttribute(el7, "class", "center mainColor-text");
+          var el8 = dom.createElement("i");
+          dom.setAttribute(el8, "class", "material-icons");
+          var el9 = dom.createTextNode("settings");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("h5");
+          dom.setAttribute(el7, "class", "center offsetColor-text");
+          var el8 = dom.createTextNode("Easy to work with");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("p");
+          dom.setAttribute(el7, "class", "light");
+          var el8 = dom.createTextNode("We have provided detailed documentation as well as specific code examples to help new users get started. We are also always open to feedback and can answer any questions a user may have about Materialize.");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n          ");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n        ");
+          dom.appendChild(el5, el6);
           dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("     ");
+          var el5 = dom.createTextNode("\n      ");
           dom.appendChild(el4, el5);
           dom.appendChild(el3, el4);
-          var el4 = dom.createTextNode(" \n    ");
+          var el4 = dom.createTextNode("\n\n    ");
           dom.appendChild(el3, el4);
           dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("     \n  ");
+          var el3 = dom.createTextNode("\n    ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("br");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("br");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n    ");
           dom.appendChild(el2, el3);
           dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode(" \n");
+          var el2 = dom.createTextNode("\n  ");
           dom.appendChild(el1, el2);
           dom.appendChild(el0, el1);
           var el1 = dom.createTextNode("\n");
@@ -11481,14 +11499,14 @@ define("meg/templates/home", ["exports"], function (exports) {
           return el0;
         },
         buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var element1 = dom.childAt(fragment, [0, 1, 1, 1]);
+          var element1 = dom.childAt(fragment, [1, 1]);
           var morphs = new Array(3);
-          morphs[0] = dom.createMorphAt(dom.childAt(element1, [1]), 0, 0);
-          morphs[1] = dom.createMorphAt(dom.childAt(element1, [3]), 0, 0);
-          morphs[2] = dom.createMorphAt(element1, 5, 5);
+          morphs[0] = dom.createMorphAt(dom.childAt(element1, [3]), 0, 0);
+          morphs[1] = dom.createMorphAt(dom.childAt(element1, [5, 1]), 0, 0);
+          morphs[2] = dom.createMorphAt(dom.childAt(element1, [9]), 1, 1);
           return morphs;
         },
-        statements: [["inline", "t", ["landingpage.title"], [], ["loc", [null, [6, 6], [6, 31]]]], ["inline", "t", ["landingpage.description"], [], ["loc", [null, [7, 5], [7, 36]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [8, 8], [8, 22]]]]], [], 0, null, ["loc", [null, [8, 2], [10, 9]]]]],
+        statements: [["inline", "t", ["landingpage.title"], [], ["loc", [null, [5, 47], [5, 72]]]], ["inline", "t", ["landingpage.description"], [], ["loc", [null, [7, 34], [7, 65]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [11, 12], [11, 26]]]]], [], 0, null, ["loc", [null, [11, 6], [13, 13]]]]],
         locals: [],
         templates: [child0]
       };
@@ -11499,7 +11517,7 @@ define("meg/templates/home", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -11507,7 +11525,7 @@ define("meg/templates/home", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 16,
+            "line": 52,
             "column": 0
           }
         },
@@ -11530,7 +11548,7 @@ define("meg/templates/home", ["exports"], function (exports) {
         dom.insertBoundary(fragment, null);
         return morphs;
       },
-      statements: [["block", "meg-layout", [], ["layoutName", "layouts/landing-page"], 0, null, ["loc", [null, [1, 0], [15, 15]]]]],
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/landing-page"], 0, null, ["loc", [null, [1, 0], [51, 15]]]]],
       locals: [],
       templates: [child0]
     };
@@ -11544,7 +11562,7 @@ define("meg/templates/layouts/dashboard", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -11635,7 +11653,7 @@ define("meg/templates/layouts/error", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -11708,7 +11726,7 @@ define("meg/templates/layouts/home", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -11821,7 +11839,7 @@ define("meg/templates/layouts/landing-page", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -11889,7 +11907,7 @@ define("meg/templates/layouts/profile", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -12001,7 +12019,7 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -12009,7 +12027,7 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 19,
+            "line": 17,
             "column": 0
           }
         },
@@ -12025,19 +12043,12 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
         dom.setAttribute(el1, "class", "wrapper");
         var el2 = dom.createTextNode("\n  ");
         dom.appendChild(el1, el2);
-        var el2 = dom.createElement("header");
+        var el2 = dom.createElement("div");
         dom.setAttribute(el2, "id", "top");
         dom.setAttribute(el2, "class", "top");
         var el3 = dom.createTextNode("\n    ");
         dom.appendChild(el2, el3);
-        var el3 = dom.createElement("div");
-        dom.setAttribute(el3, "class", "centered");
-        var el4 = dom.createTextNode("\n      ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n    ");
-        dom.appendChild(el3, el4);
+        var el3 = dom.createComment("");
         dom.appendChild(el2, el3);
         var el3 = dom.createTextNode("\n  ");
         dom.appendChild(el2, el3);
@@ -12091,14 +12102,14 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
         var element0 = dom.childAt(fragment, [0]);
         var element1 = dom.childAt(element0, [3]);
         var morphs = new Array(5);
-        morphs[0] = dom.createMorphAt(dom.childAt(element0, [1, 1]), 1, 1);
+        morphs[0] = dom.createMorphAt(dom.childAt(element0, [1]), 1, 1);
         morphs[1] = dom.createMorphAt(element1, 1, 1);
         morphs[2] = dom.createMorphAt(dom.childAt(element1, [3]), 1, 1);
         morphs[3] = dom.createMorphAt(fragment, 2, 2, contextualElement);
         morphs[4] = dom.createMorphAt(dom.childAt(fragment, [4]), 1, 1);
         return morphs;
       },
-      statements: [["inline", "render", ["top"], [], ["loc", [null, [4, 6], [4, 22]]]], ["content", "flash-display", ["loc", [null, [9, 4], [9, 21]]]], ["content", "yield", ["loc", [null, [11, 6], [11, 15]]]], ["inline", "notification-container", [], ["notifications", ["subexpr", "@mut", [["get", "notifications", ["loc", [null, [15, 39], [15, 52]]]]], [], []], "position", "top-right"], ["loc", [null, [15, 0], [15, 75]]]], ["inline", "render", ["footer"], [], ["loc", [null, [17, 2], [17, 21]]]]],
+      statements: [["inline", "render", ["top"], [], ["loc", [null, [3, 4], [3, 20]]]], ["content", "flash-display", ["loc", [null, [7, 4], [7, 21]]]], ["content", "yield", ["loc", [null, [9, 6], [9, 15]]]], ["inline", "notification-container", [], ["notifications", ["subexpr", "@mut", [["get", "notifications", ["loc", [null, [13, 39], [13, 52]]]]], [], []], "position", "top-right"], ["loc", [null, [13, 0], [13, 75]]]], ["inline", "render", ["footer"], [], ["loc", [null, [15, 2], [15, 21]]]]],
       locals: [],
       templates: []
     };
@@ -12110,7 +12121,7 @@ define("meg/templates/layouts/support", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -12159,7 +12170,7 @@ define("meg/templates/layouts/support", ["exports"], function (exports) {
         "fragmentReason": {
           "name": "triple-curlies"
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -12250,7 +12261,7 @@ define("meg/templates/main", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -12286,7 +12297,7 @@ define("meg/templates/main", ["exports"], function (exports) {
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -12324,7 +12335,7 @@ define("meg/templates/main", ["exports"], function (exports) {
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -12362,7 +12373,7 @@ define("meg/templates/main", ["exports"], function (exports) {
             return {
               meta: {
                 "fragmentReason": false,
-                "revision": "Ember@2.4.5",
+                "revision": "Ember@2.5.1",
                 "loc": {
                   "source": null,
                   "start": {
@@ -12399,7 +12410,7 @@ define("meg/templates/main", ["exports"], function (exports) {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -12451,7 +12462,7 @@ define("meg/templates/main", ["exports"], function (exports) {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -12493,7 +12504,7 @@ define("meg/templates/main", ["exports"], function (exports) {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -12535,7 +12546,7 @@ define("meg/templates/main", ["exports"], function (exports) {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
@@ -12576,7 +12587,7 @@ define("meg/templates/main", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -12633,7 +12644,7 @@ define("meg/templates/main", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type", "multiple-nodes"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -12723,7 +12734,7 @@ define("meg/templates/main", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -12767,7 +12778,7 @@ define("meg/templates/master", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -12801,7 +12812,7 @@ define("meg/templates/master", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
@@ -12839,7 +12850,7 @@ define("meg/templates/master", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type", "multiple-nodes"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -12938,7 +12949,7 @@ define("meg/templates/master", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -12982,16 +12993,16 @@ define("meg/templates/signin", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
                 "line": 2,
-                "column": 0
+                "column": 2
               },
               "end": {
                 "line": 3,
-                "column": 0
+                "column": 2
               }
             },
             "moduleName": "meg/templates/signin.hbs"
@@ -13013,19 +13024,67 @@ define("meg/templates/signin", ["exports"], function (exports) {
         };
       })();
       var child1 = (function () {
+        var child0 = (function () {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.5.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 18,
+                  "column": 16
+                },
+                "end": {
+                  "line": 20,
+                  "column": 16
+                }
+              },
+              "moduleName": "meg/templates/signin.hbs"
+            },
+            isEmpty: false,
+            arity: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                  ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("div");
+              dom.setAttribute(el1, "class", "alert alert-danger form-signin-alert");
+              dom.setAttribute(el1, "role", "alert");
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode(" ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var morphs = new Array(1);
+              morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1]), 0, 0);
+              return morphs;
+            },
+            statements: [["inline", "t", ["login.messages.error"], [], ["loc", [null, [19, 81], [19, 109]]]]],
+            locals: [],
+            templates: []
+          };
+        })();
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
-                "line": 6,
-                "column": 2
+                "line": 10,
+                "column": 12
               },
               "end": {
-                "line": 12,
-                "column": 4
+                "line": 22,
+                "column": 12
               }
             },
             "moduleName": "meg/templates/signin.hbs"
@@ -13036,26 +13095,43 @@ define("meg/templates/signin", ["exports"], function (exports) {
           hasRendered: false,
           buildFragment: function buildFragment(dom) {
             var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("        ");
+            var el1 = dom.createTextNode("            ");
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n        ");
+            var el1 = dom.createTextNode("\n            ");
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n        ");
+            var el1 = dom.createTextNode("\n              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("div");
             dom.setAttribute(el1, "class", "form-actions");
-            var el2 = dom.createTextNode("\n            ");
+            var el2 = dom.createTextNode("\n                ");
             dom.appendChild(el1, el2);
-            var el2 = dom.createElement("input");
-            dom.setAttribute(el2, "type", "submit");
-            dom.setAttribute(el2, "class", "btn btn-success");
-            dom.setAttribute(el2, "value", "Login");
+            var el2 = dom.createComment("<input  disabled={{isntValid}} type=\"submit\" class=\"btn btn-success\" value=\"Login\">");
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n        ");
+            var el2 = dom.createTextNode("\n                  ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("button");
+            dom.setAttribute(el2, "class", "btn waves-effect waves-light mainColor");
+            var el3 = dom.createComment("");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                    ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("i");
+            dom.setAttribute(el3, "class", "material-icons right");
+            var el4 = dom.createTextNode("exit_to_app");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                  ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("              ");
             dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
             var el1 = dom.createTextNode("\n");
@@ -13063,16 +13139,19 @@ define("meg/templates/signin", ["exports"], function (exports) {
             return el0;
           },
           buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-            var element0 = dom.childAt(fragment, [5, 1]);
-            var morphs = new Array(3);
+            var element0 = dom.childAt(fragment, [5]);
+            var element1 = dom.childAt(element0, [3]);
+            var morphs = new Array(5);
             morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
             morphs[1] = dom.createMorphAt(fragment, 3, 3, contextualElement);
-            morphs[2] = dom.createAttrMorph(element0, 'disabled');
+            morphs[2] = dom.createElementMorph(element1);
+            morphs[3] = dom.createMorphAt(element1, 0, 0);
+            morphs[4] = dom.createMorphAt(element0, 5, 5);
             return morphs;
           },
-          statements: [["inline", "em-input", [], ["property", "name", "label", "Full Name", "placeholder", "Enter a name...", "type", "text"], ["loc", [null, [7, 8], [7, 96]]]], ["inline", "em-input", [], ["label", "Password", "property", "password", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [8, 111], [8, 123]]]]], [], []]], ["loc", [null, [8, 8], [8, 125]]]], ["attribute", "disabled", ["get", "isntValid", ["loc", [null, [10, 30], [10, 39]]]]]],
+          statements: [["inline", "em-input", [], ["property", "email", "label", "email", "placeholder", "Enter a email...", "type", "text"], ["loc", [null, [11, 12], [11, 98]]]], ["inline", "em-input", [], ["label", "Password", "property", "password", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [12, 115], [12, 127]]]]], [], []]], ["loc", [null, [12, 12], [12, 129]]]], ["element", "action", ["LoginAccount"], [], ["loc", [null, [15, 26], [15, 53]]]], ["inline", "t", ["login.messages.sign_in"], [], ["loc", [null, [15, 101], [15, 131]]]], ["block", "if", [["get", "errorMessage", ["loc", [null, [18, 22], [18, 34]]]]], [], 0, null, ["loc", [null, [18, 16], [20, 23]]]]],
           locals: [],
-          templates: []
+          templates: [child0]
         };
       })();
       return {
@@ -13081,7 +13160,7 @@ define("meg/templates/signin", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type", "multiple-nodes"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -13089,7 +13168,7 @@ define("meg/templates/signin", ["exports"], function (exports) {
               "column": 0
             },
             "end": {
-              "line": 15,
+              "line": 31,
               "column": 0
             }
           },
@@ -13103,16 +13182,46 @@ define("meg/templates/signin", ["exports"], function (exports) {
           var el0 = dom.createDocumentFragment();
           var el1 = dom.createComment("");
           dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
+          var el1 = dom.createTextNode("\n  ");
           dom.appendChild(el0, el1);
           var el1 = dom.createElement("div");
-          dom.setAttribute(el1, "class", "container");
-          var el2 = dom.createTextNode("\n");
+          dom.setAttribute(el1, "class", "container signin");
+          var el2 = dom.createTextNode("\n    ");
           dom.appendChild(el1, el2);
-          var el2 = dom.createComment("");
+          var el2 = dom.createElement("section");
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "id", "container_demo");
+          var el4 = dom.createTextNode("\n        ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createElement("div");
+          dom.setAttribute(el4, "id", "wrapper");
+          var el5 = dom.createTextNode("\n          ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("div");
+          dom.setAttribute(el5, "id", "login");
+          dom.setAttribute(el5, "class", "form");
+          var el6 = dom.createTextNode("\n");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createComment("");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("          ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n\n        ");
+          dom.appendChild(el4, el5);
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n    ");
+          dom.appendChild(el2, el3);
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("\n  ");
           dom.appendChild(el1, el2);
           dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode(" ");
+          var el1 = dom.createTextNode("\n  ");
           dom.appendChild(el0, el1);
           var el1 = dom.createComment(" /container ");
           dom.appendChild(el0, el1);
@@ -13123,11 +13232,11 @@ define("meg/templates/signin", ["exports"], function (exports) {
         buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
           var morphs = new Array(2);
           morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-          morphs[1] = dom.createMorphAt(dom.childAt(fragment, [2]), 1, 1);
+          morphs[1] = dom.createMorphAt(dom.childAt(fragment, [2, 1, 1, 1, 1]), 1, 1);
           dom.insertBoundary(fragment, 0);
           return morphs;
         },
-        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 6], [2, 16]]]]], [], 0, null, ["loc", [null, [2, 0], [3, 7]]]], ["block", "em-form", [], ["model", ["subexpr", "@mut", [["get", "model", ["loc", [null, [6, 19], [6, 24]]]]], [], []], "form_layout", "horizontal", "submit_button", false], 1, null, ["loc", [null, [6, 2], [12, 16]]]]],
+        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 8], [2, 18]]]]], [], 0, null, ["loc", [null, [2, 2], [3, 9]]]], ["block", "em-form", [], ["model", ["subexpr", "@mut", [["get", "model", ["loc", [null, [10, 29], [10, 34]]]]], [], []], "form_layout", "horizontal", "submit_button", false], 1, null, ["loc", [null, [10, 12], [22, 24]]]]],
         locals: [],
         templates: [child0, child1]
       };
@@ -13138,7 +13247,7 @@ define("meg/templates/signin", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -13146,7 +13255,7 @@ define("meg/templates/signin", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 16,
+            "line": 32,
             "column": 0
           }
         },
@@ -13169,7 +13278,7 @@ define("meg/templates/signin", ["exports"], function (exports) {
         dom.insertBoundary(fragment, null);
         return morphs;
       },
-      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [15, 15]]]]],
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [31, 15]]]]],
       locals: [],
       templates: [child0]
     };
@@ -13182,16 +13291,16 @@ define("meg/templates/signup", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
                 "line": 2,
-                "column": 0
+                "column": 2
               },
               "end": {
                 "line": 3,
-                "column": 0
+                "column": 2
               }
             },
             "moduleName": "meg/templates/signup.hbs"
@@ -13217,16 +13326,16 @@ define("meg/templates/signup", ["exports"], function (exports) {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
-                  "line": 15,
-                  "column": 34
+                  "line": 16,
+                  "column": 16
                 },
                 "end": {
-                  "line": 17,
-                  "column": 29
+                  "line": 18,
+                  "column": 16
                 }
               },
               "moduleName": "meg/templates/signup.hbs"
@@ -13237,7 +13346,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             hasRendered: false,
             buildFragment: function buildFragment(dom) {
               var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("                                      ");
+              var el1 = dom.createTextNode("                  ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("button");
               dom.setAttribute(el1, "class", "button");
@@ -13259,7 +13368,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
               morphs[1] = dom.createMorphAt(element0, 1, 1);
               return morphs;
             },
-            statements: [["element", "action", ["createAccount"], [], ["loc", [null, [16, 46], [16, 73]]]], ["inline", "t", ["signup.create"], [], ["loc", [null, [16, 165], [16, 186]]]]],
+            statements: [["element", "action", ["createAccount"], [], ["loc", [null, [17, 26], [17, 53]]]], ["inline", "t", ["signup.create"], [], ["loc", [null, [17, 145], [17, 166]]]]],
             locals: [],
             templates: []
           };
@@ -13268,16 +13377,16 @@ define("meg/templates/signup", ["exports"], function (exports) {
           return {
             meta: {
               "fragmentReason": false,
-              "revision": "Ember@2.4.5",
+              "revision": "Ember@2.5.1",
               "loc": {
                 "source": null,
                 "start": {
-                  "line": 18,
-                  "column": 29
+                  "line": 19,
+                  "column": 16
                 },
                 "end": {
-                  "line": 20,
-                  "column": 25
+                  "line": 21,
+                  "column": 16
                 }
               },
               "moduleName": "meg/templates/signup.hbs"
@@ -13288,7 +13397,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             hasRendered: false,
             buildFragment: function buildFragment(dom) {
               var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("										                  ");
+              var el1 = dom.createTextNode("                  ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("button");
               dom.setAttribute(el1, "class", "button");
@@ -13313,7 +13422,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
               morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1]), 1, 1);
               return morphs;
             },
-            statements: [["inline", "t", ["signup.onboarding"], [], ["loc", [null, [19, 118], [19, 143]]]]],
+            statements: [["inline", "t", ["signup.onboarding"], [], ["loc", [null, [20, 108], [20, 133]]]]],
             locals: [],
             templates: []
           };
@@ -13321,16 +13430,16 @@ define("meg/templates/signup", ["exports"], function (exports) {
         return {
           meta: {
             "fragmentReason": false,
-            "revision": "Ember@2.4.5",
+            "revision": "Ember@2.5.1",
             "loc": {
               "source": null,
               "start": {
                 "line": 9,
-                "column": 28
+                "column": 12
               },
               "end": {
-                "line": 26,
-                "column": 26
+                "line": 27,
+                "column": 12
               }
             },
             "moduleName": "meg/templates/signup.hbs"
@@ -13341,23 +13450,23 @@ define("meg/templates/signup", ["exports"], function (exports) {
           hasRendered: false,
           buildFragment: function buildFragment(dom) {
             var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("                                ");
+            var el1 = dom.createTextNode("              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n                                ");
+            var el1 = dom.createTextNode("\n              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n                                ");
+            var el1 = dom.createTextNode("\n              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n                                ");
+            var el1 = dom.createTextNode(" \n              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createComment("");
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n                                ");
+            var el1 = dom.createTextNode("\n              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("p");
             var el2 = dom.createTextNode("\n");
@@ -13366,21 +13475,21 @@ define("meg/templates/signup", ["exports"], function (exports) {
             dom.appendChild(el1, el2);
             var el2 = dom.createComment("");
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("								                ");
+            var el2 = dom.createTextNode("              ");
             dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n                                ");
+            var el1 = dom.createTextNode("\n              ");
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("p");
             dom.setAttribute(el1, "class", "change_link");
-            var el2 = dom.createTextNode("\n									                    Already a member ?\n									                    ");
+            var el2 = dom.createTextNode("\n                Already a member ?\n                ");
             dom.appendChild(el1, el2);
             var el2 = dom.createElement("button");
             dom.setAttribute(el2, "class", "signed-out button--signin");
             var el3 = dom.createComment("");
             dom.appendChild(el2, el3);
             dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n								                ");
+            var el2 = dom.createTextNode("\n              ");
             dom.appendChild(el1, el2);
             dom.appendChild(el0, el1);
             var el1 = dom.createTextNode("\n");
@@ -13401,7 +13510,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             morphs[7] = dom.createMorphAt(element2, 0, 0);
             return morphs;
           },
-          statements: [["inline", "em-input", [], ["property", "name", "label", "Full Name", "placeholder", "Enter a name...", "type", "text"], ["loc", [null, [10, 32], [10, 120]]]], ["inline", "em-input", [], ["property", "email", "label", "email", "placeholder", "Enter a email...", "type", "text"], ["loc", [null, [11, 32], [11, 118]]]], ["inline", "em-input", [], ["label", "Password", "property", "password", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [12, 135], [12, 147]]]]], [], []]], ["loc", [null, [12, 32], [12, 149]]]], ["inline", "em-input", [], ["label", "Password", "property", "passwordConfirmation", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [13, 147], [13, 159]]]]], [], []]], ["loc", [null, [13, 32], [13, 161]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [15, 40], [15, 54]]]]], [], 0, null, ["loc", [null, [15, 34], [17, 36]]]], ["block", "if", [["get", "auth.signingIn", ["loc", [null, [18, 35], [18, 49]]]]], [], 1, null, ["loc", [null, [18, 29], [20, 32]]]], ["element", "action", ["signinPage"], [], ["loc", [null, [24, 71], [24, 95]]]], ["inline", "t", ["signup.signin"], [], ["loc", [null, [24, 96], [24, 117]]]]],
+          statements: [["inline", "em-input", [], ["property", "name", "label", "Full Name", "placeholder", "Enter a name...", "type", "text"], ["loc", [null, [10, 14], [10, 102]]]], ["inline", "em-input", [], ["property", "email", "label", "email", "placeholder", "Enter a email...", "type", "text"], ["loc", [null, [11, 14], [11, 100]]]], ["inline", "em-input", [], ["label", "Password", "property", "password", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [13, 39], [13, 51]]]]], [], []]], ["loc", [null, [12, 14], [13, 53]]]], ["inline", "em-input", [], ["label", "Password", "property", "passwordConfirmation", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [14, 129], [14, 141]]]]], [], []]], ["loc", [null, [14, 14], [14, 143]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [16, 22], [16, 36]]]]], [], 0, null, ["loc", [null, [16, 16], [18, 23]]]], ["block", "if", [["get", "auth.signingIn", ["loc", [null, [19, 22], [19, 36]]]]], [], 1, null, ["loc", [null, [19, 16], [21, 23]]]], ["element", "action", ["signinPage"], [], ["loc", [null, [25, 58], [25, 82]]]], ["inline", "t", ["signup.signin"], [], ["loc", [null, [25, 83], [25, 104]]]]],
           locals: [],
           templates: [child0, child1]
         };
@@ -13412,7 +13521,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             "name": "missing-wrapper",
             "problems": ["wrong-type", "multiple-nodes"]
           },
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
@@ -13420,7 +13529,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
               "column": 0
             },
             "end": {
-              "line": 35,
+              "line": 36,
               "column": 0
             }
           },
@@ -13434,22 +13543,22 @@ define("meg/templates/signup", ["exports"], function (exports) {
           var el0 = dom.createDocumentFragment();
           var el1 = dom.createComment("");
           dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("    ");
+          var el1 = dom.createTextNode("  ");
           dom.appendChild(el0, el1);
           var el1 = dom.createElement("div");
           dom.setAttribute(el1, "class", "container signup");
-          var el2 = dom.createTextNode("\n            ");
+          var el2 = dom.createTextNode("\n    ");
           dom.appendChild(el1, el2);
           var el2 = dom.createElement("section");
-          var el3 = dom.createTextNode("\n                ");
+          var el3 = dom.createTextNode("\n      ");
           dom.appendChild(el2, el3);
           var el3 = dom.createElement("div");
           dom.setAttribute(el3, "id", "container_demo");
-          var el4 = dom.createTextNode("\n                    ");
+          var el4 = dom.createTextNode("\n        ");
           dom.appendChild(el3, el4);
           var el4 = dom.createElement("div");
           dom.setAttribute(el4, "id", "wrapper");
-          var el5 = dom.createTextNode("\n                        ");
+          var el5 = dom.createTextNode("\n          ");
           dom.appendChild(el4, el5);
           var el5 = dom.createElement("div");
           dom.setAttribute(el5, "id", "register");
@@ -13458,19 +13567,19 @@ define("meg/templates/signup", ["exports"], function (exports) {
           dom.appendChild(el5, el6);
           var el6 = dom.createComment("");
           dom.appendChild(el5, el6);
-          var el6 = dom.createTextNode("\n                        ");
+          var el6 = dom.createTextNode("\n          ");
           dom.appendChild(el5, el6);
           dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n\n                    ");
+          var el5 = dom.createTextNode("\n\n        ");
           dom.appendChild(el4, el5);
           dom.appendChild(el3, el4);
-          var el4 = dom.createTextNode("\n                ");
+          var el4 = dom.createTextNode("\n      ");
           dom.appendChild(el3, el4);
           dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("\n            ");
+          var el3 = dom.createTextNode("\n    ");
           dom.appendChild(el2, el3);
           dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n        ");
+          var el2 = dom.createTextNode("\n  ");
           dom.appendChild(el1, el2);
           dom.appendChild(el0, el1);
           var el1 = dom.createTextNode("\n\n");
@@ -13484,7 +13593,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
           dom.insertBoundary(fragment, 0);
           return morphs;
         },
-        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 6], [2, 16]]]]], [], 0, null, ["loc", [null, [2, 0], [3, 7]]]], ["block", "em-form", [], ["model", ["subexpr", "@mut", [["get", "model", ["loc", [null, [9, 45], [9, 50]]]]], [], []], "form_layout", "horizontal", "submit_button", false], 1, null, ["loc", [null, [9, 28], [26, 38]]]]],
+        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 8], [2, 18]]]]], [], 0, null, ["loc", [null, [2, 2], [3, 9]]]], ["block", "em-form", [], ["model", ["subexpr", "@mut", [["get", "model", ["loc", [null, [9, 29], [9, 34]]]]], [], []], "form_layout", "horizontal", "submit_button", false], 1, null, ["loc", [null, [9, 12], [27, 24]]]]],
         locals: [],
         templates: [child0, child1]
       };
@@ -13495,7 +13604,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -13503,7 +13612,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 36,
+            "line": 37,
             "column": 0
           }
         },
@@ -13526,7 +13635,1628 @@ define("meg/templates/signup", ["exports"], function (exports) {
         dom.insertBoundary(fragment, null);
         return morphs;
       },
-      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [35, 15]]]]],
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [36, 15]]]]],
+      locals: [],
+      templates: [child0]
+    };
+  })());
+});
+define("meg/templates/step1", ["exports"], function (exports) {
+  exports["default"] = Ember.HTMLBars.template((function () {
+    var child0 = (function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 2,
+                "column": 0
+              },
+              "end": {
+                "line": 3,
+                "column": 0
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: true,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child1 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 28,
+                "column": 30
+              },
+              "end": {
+                "line": 30,
+                "column": 30
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("                                  ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("button");
+            dom.setAttribute(el1, "class", "btn waves-effect waves-light");
+            var el2 = dom.createTextNode("Select");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var element1 = dom.childAt(fragment, [1]);
+            var morphs = new Array(1);
+            morphs[0] = dom.createElementMorph(element1);
+            return morphs;
+          },
+          statements: [["element", "action", ["miniSelected"], [], ["loc", [null, [29, 79], [29, 104]]]]],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child2 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 31,
+                "column": 30
+              },
+              "end": {
+                "line": 35,
+                "column": 30
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("                                    ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("button");
+            dom.setAttribute(el1, "class", "btn waves-effect waves-light");
+            dom.setAttribute(el1, "type", "submit");
+            dom.setAttribute(el1, "name", "action");
+            var el2 = dom.createTextNode("Selected\n                                      ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("i");
+            dom.setAttribute(el2, "class", "material-icons right");
+            var el3 = dom.createTextNode("done");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                                    ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child3 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 49,
+                "column": 30
+              },
+              "end": {
+                "line": 51,
+                "column": 30
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("                                  ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("button");
+            dom.setAttribute(el1, "class", "btn waves-effect waves-light");
+            var el2 = dom.createTextNode("Select");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var element0 = dom.childAt(fragment, [1]);
+            var morphs = new Array(1);
+            morphs[0] = dom.createElementMorph(element0);
+            return morphs;
+          },
+          statements: [["element", "action", ["completeSelected"], [], ["loc", [null, [50, 79], [50, 108]]]]],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child4 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 52,
+                "column": 30
+              },
+              "end": {
+                "line": 56,
+                "column": 30
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("                                ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("button");
+            dom.setAttribute(el1, "class", "btn waves-effect waves-light");
+            dom.setAttribute(el1, "type", "submit");
+            dom.setAttribute(el1, "name", "action");
+            var el2 = dom.createTextNode("Selected\n                                  ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("i");
+            dom.setAttribute(el2, "class", "material-icons right");
+            var el3 = dom.createTextNode("done");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                                ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child5 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 62,
+                "column": 20
+              },
+              "end": {
+                "line": 62,
+                "column": 75
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("compare editions");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child6 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 70,
+                "column": 20
+              },
+              "end": {
+                "line": 70,
+                "column": 67
+              }
+            },
+            "moduleName": "meg/templates/step1.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("Start");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      return {
+        meta: {
+          "fragmentReason": {
+            "name": "missing-wrapper",
+            "problems": ["wrong-type", "multiple-nodes"]
+          },
+          "revision": "Ember@2.5.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 82,
+              "column": 0
+            }
+          },
+          "moduleName": "meg/templates/step1.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("div");
+          dom.setAttribute(el1, "id", "landing");
+          dom.setAttribute(el1, "class", "landing");
+          var el2 = dom.createTextNode("\n  ");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createElement("div");
+          dom.setAttribute(el2, "class", "row hero z-1");
+          var el3 = dom.createTextNode("\n    ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "class", "landing-centered-wrapper");
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createElement("div");
+          dom.setAttribute(el4, "class", "large-12 columns");
+          dom.setAttribute(el4, "id", "hero-copy");
+          var el5 = dom.createTextNode("\n		    ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("h2");
+          var el6 = dom.createComment("");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n        ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("section");
+          var el6 = dom.createTextNode("\n            ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("div");
+          dom.setAttribute(el6, "class", "landing-centered-wrapper");
+          var el7 = dom.createTextNode("\n                ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("div");
+          dom.setAttribute(el7, "class", "large-12 columns");
+          dom.setAttribute(el7, "id", "hero-copy");
+          var el8 = dom.createTextNode("\n                  ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("h2");
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n                ");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n                ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("div");
+          dom.setAttribute(el7, "class", "large-12 columns");
+          var el8 = dom.createTextNode("\n                  ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("div");
+          dom.setAttribute(el8, "class", "large-6 columns");
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("h3");
+          var el10 = dom.createComment("");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("h3");
+          var el10 = dom.createComment("");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("div");
+          dom.setAttribute(el9, "class", "large-12 columns");
+          var el10 = dom.createTextNode("\n                      ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("div");
+          dom.setAttribute(el10, "class", "large-6 columns");
+          var el11 = dom.createTextNode("\n                        ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("div");
+          dom.setAttribute(el11, "class", "well well-lg");
+          var el12 = dom.createTextNode("\n                          ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("div");
+          dom.setAttribute(el12, "class", "large-12");
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("div");
+          dom.setAttribute(el13, "class", "row");
+          var el14 = dom.createTextNode("\n                              ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("span");
+          dom.setAttribute(el14, "class", "label label-warning");
+          var el15 = dom.createComment("");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                            ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("h3");
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("h3");
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("div");
+          dom.setAttribute(el13, "class", "row");
+          var el14 = dom.createTextNode("\n");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("                            ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                          ");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          var el12 = dom.createTextNode("\n                        ");
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                      ");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                      ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("div");
+          dom.setAttribute(el10, "class", "large-6 columns");
+          var el11 = dom.createTextNode("\n                        ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("div");
+          dom.setAttribute(el11, "class", "well well-lg");
+          var el12 = dom.createTextNode("\n                          ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("div");
+          dom.setAttribute(el12, "class", "large-12");
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("div");
+          dom.setAttribute(el13, "class", "row");
+          var el14 = dom.createTextNode("\n                              ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("span");
+          dom.setAttribute(el14, "class", "label label-warning");
+          var el15 = dom.createComment("");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                            ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("h3");
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("h3");
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                            ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("div");
+          dom.setAttribute(el13, "class", "row");
+          var el14 = dom.createTextNode("\n");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createComment("");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("                            ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                          ");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          var el12 = dom.createTextNode("\n                        ");
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                      ");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                    ");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                  ");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n                  ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("div");
+          dom.setAttribute(el8, "class", "large-6  columns");
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("h3");
+          var el10 = dom.createComment("");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("h3");
+          var el10 = dom.createComment("");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                    ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                  ");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n                ");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n              ");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n              ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("button");
+          dom.setAttribute(el6, "class", "button");
+          var el7 = dom.createTextNode("Next");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n            ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n          ");
+          dom.appendChild(el4, el5);
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("\n        ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n      ");
+          dom.appendChild(el2, el3);
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("\n    ");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n\n\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var element2 = dom.childAt(fragment, [1, 1, 1, 1]);
+          var element3 = dom.childAt(element2, [3]);
+          var element4 = dom.childAt(element3, [1]);
+          var element5 = dom.childAt(element4, [3]);
+          var element6 = dom.childAt(element5, [1]);
+          var element7 = dom.childAt(element6, [5]);
+          var element8 = dom.childAt(element7, [1, 1, 1]);
+          var element9 = dom.childAt(element8, [7]);
+          var element10 = dom.childAt(element7, [3, 1, 1]);
+          var element11 = dom.childAt(element10, [7]);
+          var element12 = dom.childAt(element5, [3]);
+          var element13 = dom.childAt(element3, [3]);
+          var morphs = new Array(23);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          morphs[1] = dom.createMorphAt(dom.childAt(element2, [1]), 0, 0);
+          morphs[2] = dom.createMorphAt(dom.childAt(element4, [1, 1]), 0, 0);
+          morphs[3] = dom.createMorphAt(dom.childAt(element6, [1]), 0, 0);
+          morphs[4] = dom.createMorphAt(dom.childAt(element6, [3]), 0, 0);
+          morphs[5] = dom.createMorphAt(dom.childAt(element8, [1, 1]), 0, 0);
+          morphs[6] = dom.createMorphAt(dom.childAt(element8, [3]), 0, 0);
+          morphs[7] = dom.createMorphAt(dom.childAt(element8, [5]), 0, 0);
+          morphs[8] = dom.createMorphAt(element9, 1, 1);
+          morphs[9] = dom.createMorphAt(element9, 2, 2);
+          morphs[10] = dom.createMorphAt(dom.childAt(element10, [1, 1]), 0, 0);
+          morphs[11] = dom.createMorphAt(dom.childAt(element10, [3]), 0, 0);
+          morphs[12] = dom.createMorphAt(dom.childAt(element10, [5]), 0, 0);
+          morphs[13] = dom.createMorphAt(element11, 1, 1);
+          morphs[14] = dom.createMorphAt(element11, 2, 2);
+          morphs[15] = dom.createMorphAt(element6, 7, 7);
+          morphs[16] = dom.createMorphAt(dom.childAt(element12, [1]), 0, 0);
+          morphs[17] = dom.createMorphAt(dom.childAt(element12, [3]), 0, 0);
+          morphs[18] = dom.createMorphAt(element12, 5, 5);
+          morphs[19] = dom.createMorphAt(element12, 7, 7);
+          morphs[20] = dom.createMorphAt(element12, 9, 9);
+          morphs[21] = dom.createMorphAt(element12, 11, 11);
+          morphs[22] = dom.createElementMorph(element13);
+          dom.insertBoundary(fragment, 0);
+          return morphs;
+        },
+        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 6], [2, 16]]]]], [], 0, null, ["loc", [null, [2, 0], [3, 7]]]], ["inline", "t", ["step1.title"], [], ["loc", [null, [8, 10], [8, 29]]]], ["inline", "t", ["step1.sub.title"], [], ["loc", [null, [12, 22], [12, 45]]]], ["inline", "t", ["step1.type1.title"], [], ["loc", [null, [16, 24], [16, 49]]]], ["inline", "t", ["step1.type1.price"], [], ["loc", [null, [17, 24], [17, 49]]]], ["inline", "t", ["step1.type1.dash"], [], ["loc", [null, [23, 64], [23, 88]]]], ["inline", "t", ["step1.type1.minified_edition_name"], [], ["loc", [null, [25, 32], [25, 73]]]], ["inline", "t", ["step1.type1.edition"], [], ["loc", [null, [26, 32], [26, 59]]]], ["block", "if", [["get", "typeBeforeMiniSelect", ["loc", [null, [28, 36], [28, 56]]]]], [], 1, null, ["loc", [null, [28, 30], [30, 37]]]], ["block", "if", [["get", "typeAfterMiniSelect", ["loc", [null, [31, 36], [31, 55]]]]], [], 2, null, ["loc", [null, [31, 30], [35, 37]]]], ["inline", "t", ["step1.type1.dash"], [], ["loc", [null, [44, 64], [44, 88]]]], ["inline", "t", ["step1.type1.complete_edition_name"], [], ["loc", [null, [46, 32], [46, 73]]]], ["inline", "t", ["step1.type1.edition"], [], ["loc", [null, [47, 32], [47, 59]]]], ["block", "if", [["get", "typeBeforeCompleteSelect", ["loc", [null, [49, 36], [49, 60]]]]], [], 3, null, ["loc", [null, [49, 30], [51, 37]]]], ["block", "if", [["get", "typeAfterCompleteSelect", ["loc", [null, [52, 36], [52, 59]]]]], [], 4, null, ["loc", [null, [52, 30], [56, 37]]]], ["block", "paper-button", [], ["raised", true, "warn", true], 5, null, ["loc", [null, [62, 20], [62, 92]]]], ["inline", "t", ["step1.type2.title"], [], ["loc", [null, [65, 24], [65, 49]]]], ["inline", "t", ["step1.type2.description"], [], ["loc", [null, [66, 24], [66, 55]]]], ["inline", "paper-input", [], ["label", "IP Address"], ["loc", [null, [67, 20], [67, 54]]]], ["inline", "paper-input", [], ["label", "Username"], ["loc", [null, [68, 20], [68, 52]]]], ["inline", "paper-input", [], ["label", "Password"], ["loc", [null, [69, 20], [69, 52]]]], ["block", "paper-button", [], ["raised", true, "primary", true], 6, null, ["loc", [null, [70, 20], [70, 84]]]], ["element", "action", ["goto"], [], ["loc", [null, [74, 37], [74, 54]]]]],
+        locals: [],
+        templates: [child0, child1, child2, child3, child4, child5, child6]
+      };
+    })();
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": ["wrong-type"]
+        },
+        "revision": "Ember@2.5.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 83,
+            "column": 0
+          }
+        },
+        "moduleName": "meg/templates/step1.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [82, 15]]]]],
+      locals: [],
+      templates: [child0]
+    };
+  })());
+});
+define("meg/templates/step2", ["exports"], function (exports) {
+  exports["default"] = Ember.HTMLBars.template((function () {
+    var child0 = (function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 2,
+                "column": 0
+              },
+              "end": {
+                "line": 3,
+                "column": 0
+              }
+            },
+            "moduleName": "meg/templates/step2.hbs"
+          },
+          isEmpty: true,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child1 = (function () {
+        var child0 = (function () {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.5.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 15,
+                  "column": 16
+                },
+                "end": {
+                  "line": 16,
+                  "column": 16
+                }
+              },
+              "moduleName": "meg/templates/step2.hbs"
+            },
+            isEmpty: true,
+            arity: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes() {
+              return [];
+            },
+            statements: [],
+            locals: [],
+            templates: []
+          };
+        })();
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 14,
+                "column": 14
+              },
+              "end": {
+                "line": 17,
+                "column": 14
+              }
+            },
+            "moduleName": "meg/templates/step2.hbs"
+          },
+          isEmpty: false,
+          arity: 1,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(1);
+            morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+            dom.insertBoundary(fragment, 0);
+            dom.insertBoundary(fragment, null);
+            return morphs;
+          },
+          statements: [["block", "host-info", [], ["model", ["subexpr", "@mut", [["get", "h", ["loc", [null, [15, 35], [15, 36]]]]], [], []], "onConfirm", ["subexpr", "action", ["addhost"], [], ["loc", [null, [15, 48], [15, 66]]]], "onDone", ["subexpr", "action", ["done"], [], ["loc", [null, [15, 74], [15, 89]]]]], 0, null, ["loc", [null, [15, 16], [16, 30]]]]],
+          locals: ["h"],
+          templates: [child0]
+        };
+      })();
+      return {
+        meta: {
+          "fragmentReason": {
+            "name": "missing-wrapper",
+            "problems": ["wrong-type", "multiple-nodes"]
+          },
+          "revision": "Ember@2.5.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 27,
+              "column": 0
+            }
+          },
+          "moduleName": "meg/templates/step2.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("div");
+          dom.setAttribute(el1, "id", "landing");
+          dom.setAttribute(el1, "class", "landing");
+          var el2 = dom.createTextNode("\n  ");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createElement("div");
+          dom.setAttribute(el2, "class", "row hero z-1");
+          var el3 = dom.createTextNode("\n    ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "class", "landing-centered-wrapper");
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createElement("div");
+          dom.setAttribute(el4, "class", "large-12 columns");
+          dom.setAttribute(el4, "id", "hero-copy");
+          var el5 = dom.createTextNode("\n		    ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("h2");
+          var el6 = dom.createComment("");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n        ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("section");
+          var el6 = dom.createTextNode("\n          ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("div");
+          dom.setAttribute(el6, "class", "landing-centered-wrapper");
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("div");
+          dom.setAttribute(el7, "class", "large-12 columns");
+          dom.setAttribute(el7, "id", "hero-copy");
+          var el8 = dom.createTextNode("\n              ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("h2");
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n            ");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createComment("");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("            ");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n\n          ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n        ");
+          dom.appendChild(el4, el5);
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n    ");
+          dom.appendChild(el2, el3);
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("\n");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n\n\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var element0 = dom.childAt(fragment, [1, 1, 1, 1]);
+          var element1 = dom.childAt(element0, [3, 1]);
+          var morphs = new Array(4);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          morphs[1] = dom.createMorphAt(dom.childAt(element0, [1]), 0, 0);
+          morphs[2] = dom.createMorphAt(dom.childAt(element1, [1, 1]), 0, 0);
+          morphs[3] = dom.createMorphAt(element1, 3, 3);
+          dom.insertBoundary(fragment, 0);
+          return morphs;
+        },
+        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 6], [2, 16]]]]], [], 0, null, ["loc", [null, [2, 0], [3, 7]]]], ["inline", "t", ["step1.title"], [], ["loc", [null, [8, 10], [8, 29]]]], ["inline", "t", ["step2.sub.title"], [], ["loc", [null, [12, 18], [12, 41]]]], ["block", "each", [["get", "hostInfos", ["loc", [null, [14, 22], [14, 31]]]]], [], 1, null, ["loc", [null, [14, 14], [17, 23]]]]],
+        locals: [],
+        templates: [child0, child1]
+      };
+    })();
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": ["wrong-type"]
+        },
+        "revision": "Ember@2.5.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 28,
+            "column": 0
+          }
+        },
+        "moduleName": "meg/templates/step2.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [27, 15]]]]],
+      locals: [],
+      templates: [child0]
+    };
+  })());
+});
+define("meg/templates/step3", ["exports"], function (exports) {
+  exports["default"] = Ember.HTMLBars.template((function () {
+    var child0 = (function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 2,
+                "column": 0
+              },
+              "end": {
+                "line": 3,
+                "column": 0
+              }
+            },
+            "moduleName": "meg/templates/step3.hbs"
+          },
+          isEmpty: true,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child1 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 46,
+                "column": 20
+              },
+              "end": {
+                "line": 46,
+                "column": 66
+              }
+            },
+            "moduleName": "meg/templates/step3.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("Install");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      var child2 = (function () {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.5.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 47,
+                "column": 20
+              },
+              "end": {
+                "line": 47,
+                "column": 70
+              }
+            },
+            "moduleName": "meg/templates/step3.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("Migrate");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+      return {
+        meta: {
+          "fragmentReason": {
+            "name": "missing-wrapper",
+            "problems": ["wrong-type", "multiple-nodes"]
+          },
+          "revision": "Ember@2.5.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 101,
+              "column": 0
+            }
+          },
+          "moduleName": "meg/templates/step3.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("div");
+          dom.setAttribute(el1, "id", "landing");
+          dom.setAttribute(el1, "class", "landing");
+          var el2 = dom.createTextNode("\n  ");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createElement("div");
+          dom.setAttribute(el2, "class", "row hero z-1");
+          var el3 = dom.createTextNode("\n    ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "class", "landing-centered-wrapper");
+          var el4 = dom.createTextNode("\n      ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createElement("div");
+          dom.setAttribute(el4, "class", "large-12 columns");
+          dom.setAttribute(el4, "id", "hero-copy");
+          var el5 = dom.createTextNode("\n		    ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("h2");
+          var el6 = dom.createComment("");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n        ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("section");
+          var el6 = dom.createTextNode("\n          ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("div");
+          dom.setAttribute(el6, "class", "landing-centered-wrapper");
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("div");
+          dom.setAttribute(el7, "class", "large-12 columns");
+          dom.setAttribute(el7, "id", "hero-copy");
+          var el8 = dom.createTextNode("\n              ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("h2");
+          var el9 = dom.createComment("");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n            ");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n            ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("div");
+          dom.setAttribute(el7, "class", "large-12 columns");
+          var el8 = dom.createTextNode("\n              ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("div");
+          dom.setAttribute(el8, "class", "col-sm-4");
+          dom.setAttribute(el8, "style", "background-color:lavender;");
+          var el9 = dom.createTextNode("\n                ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("br");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("div");
+          dom.setAttribute(el9, "class", "list-group");
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("button");
+          dom.setAttribute(el10, "type", "button");
+          dom.setAttribute(el10, "class", "list-group-item");
+          var el11 = dom.createTextNode("Host 1");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("button");
+          dom.setAttribute(el10, "type", "button");
+          dom.setAttribute(el10, "class", "list-group-item");
+          var el11 = dom.createTextNode("Host 2");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("button");
+          dom.setAttribute(el10, "type", "button");
+          dom.setAttribute(el10, "class", "list-group-item");
+          var el11 = dom.createTextNode("Host 3");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("button");
+          dom.setAttribute(el10, "type", "button");
+          dom.setAttribute(el10, "class", "list-group-item");
+          var el11 = dom.createTextNode("Host 4");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                ");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n              ");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n              ");
+          dom.appendChild(el7, el8);
+          var el8 = dom.createElement("div");
+          dom.setAttribute(el8, "class", "col-sm-8");
+          dom.setAttribute(el8, "style", "background-color:#DCDCDC;");
+          var el9 = dom.createTextNode("\n                ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("div");
+          dom.setAttribute(el9, "class", "large-12 columns");
+          dom.setAttribute(el9, "id", "hero-copy");
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("h2");
+          var el11 = dom.createTextNode("Host 2");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                ");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n                ");
+          dom.appendChild(el8, el9);
+          var el9 = dom.createElement("div");
+          dom.setAttribute(el9, "class", "large-12 columns");
+          dom.setAttribute(el9, "id", "hero-copy");
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("div");
+          dom.setAttribute(el10, "class", "col-sm-6");
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("h4");
+          var el12 = dom.createTextNode("IP Address ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("span");
+          dom.setAttribute(el12, "class", "label label-default");
+          var el13 = dom.createTextNode("103.56.92.24");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("h4");
+          var el12 = dom.createTextNode("Username ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("span");
+          dom.setAttribute(el12, "class", "label label-default");
+          var el13 = dom.createTextNode("megam");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("h4");
+          var el12 = dom.createTextNode("Password ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("span");
+          dom.setAttribute(el12, "class", "label label-default");
+          var el13 = dom.createTextNode("megam");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("h4");
+          var el12 = dom.createTextNode("File System ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("span");
+          dom.setAttribute(el12, "class", "label label-default");
+          var el13 = dom.createTextNode("ext4");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("h4");
+          var el12 = dom.createTextNode("Cpu ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("span");
+          dom.setAttribute(el12, "class", "label label-default");
+          var el13 = dom.createTextNode("12");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                  ");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("div");
+          dom.setAttribute(el10, "class", "col-sm-6");
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("h4");
+          var el12 = dom.createTextNode("choose :");
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("div");
+          dom.setAttribute(el11, "class", "large-12 columns");
+          var el12 = dom.createTextNode("\n                      ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("div");
+          dom.setAttribute(el12, "class", "col-sm-6");
+          var el13 = dom.createTextNode("\n                      ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createComment("");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          var el12 = dom.createTextNode("\n                    ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("div");
+          dom.setAttribute(el12, "class", "col-sm-6");
+          var el13 = dom.createTextNode("\n                      ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createComment("");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          var el12 = dom.createTextNode("\n                  ");
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createComment("");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                    ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createComment("");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                  ");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                  ");
+          dom.appendChild(el9, el10);
+          var el10 = dom.createElement("div");
+          dom.setAttribute(el10, "class", "large-12 columns");
+          var el11 = dom.createTextNode("\n                  ");
+          dom.appendChild(el10, el11);
+          var el11 = dom.createElement("table");
+          dom.setAttribute(el11, "class", "table table-condensed");
+          dom.setAttribute(el11, "align", "left");
+          var el12 = dom.createTextNode("\n                    ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("thead");
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("tr");
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("th");
+          var el15 = dom.createTextNode("#");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("th");
+          var el15 = dom.createTextNode("Disk");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("th");
+          var el15 = dom.createTextNode("Type");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("th");
+          var el15 = dom.createTextNode("Size");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("th");
+          var el15 = dom.createTextNode("Mount Point");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                    ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                  ");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          var el12 = dom.createTextNode("\n                  ");
+          dom.appendChild(el11, el12);
+          var el12 = dom.createElement("tbody");
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("tr");
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("1");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("sda");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("disk");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("5.5T");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                    ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("tr");
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("2");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("sda1");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("part");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("5.5T");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("/storage1");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                    ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("tr");
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("3");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("sdb");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("disk");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("5.5T");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                    ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                    ");
+          dom.appendChild(el12, el13);
+          var el13 = dom.createElement("tr");
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("4");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("sdb1");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("disk");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("5.5T");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                      ");
+          dom.appendChild(el13, el14);
+          var el14 = dom.createElement("td");
+          var el15 = dom.createTextNode("/storage2");
+          dom.appendChild(el14, el15);
+          dom.appendChild(el13, el14);
+          var el14 = dom.createTextNode("\n                    ");
+          dom.appendChild(el13, el14);
+          dom.appendChild(el12, el13);
+          var el13 = dom.createTextNode("\n                  ");
+          dom.appendChild(el12, el13);
+          dom.appendChild(el11, el12);
+          var el12 = dom.createTextNode("\n                  ");
+          dom.appendChild(el11, el12);
+          dom.appendChild(el10, el11);
+          var el11 = dom.createTextNode("\n                  ");
+          dom.appendChild(el10, el11);
+          dom.appendChild(el9, el10);
+          var el10 = dom.createTextNode("\n                ");
+          dom.appendChild(el9, el10);
+          dom.appendChild(el8, el9);
+          var el9 = dom.createTextNode("\n              ");
+          dom.appendChild(el8, el9);
+          dom.appendChild(el7, el8);
+          var el8 = dom.createTextNode("\n            ");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n          ");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n        ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n      ");
+          dom.appendChild(el4, el5);
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("\n    ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n  ");
+          dom.appendChild(el2, el3);
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("\n");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var element0 = dom.childAt(fragment, [1, 1, 1, 1]);
+          var element1 = dom.childAt(element0, [3, 1]);
+          var element2 = dom.childAt(element1, [3, 3, 3, 3]);
+          var element3 = dom.childAt(element2, [3]);
+          var morphs = new Array(7);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          morphs[1] = dom.createMorphAt(dom.childAt(element0, [1]), 0, 0);
+          morphs[2] = dom.createMorphAt(dom.childAt(element1, [1, 1]), 0, 0);
+          morphs[3] = dom.createMorphAt(dom.childAt(element3, [1]), 1, 1);
+          morphs[4] = dom.createMorphAt(dom.childAt(element3, [3]), 1, 1);
+          morphs[5] = dom.createMorphAt(element2, 5, 5);
+          morphs[6] = dom.createMorphAt(element2, 7, 7);
+          dom.insertBoundary(fragment, 0);
+          return morphs;
+        },
+        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 6], [2, 16]]]]], [], 0, null, ["loc", [null, [2, 0], [3, 7]]]], ["inline", "t", ["step1.title"], [], ["loc", [null, [8, 10], [8, 29]]]], ["inline", "t", ["step3.sub.title"], [], ["loc", [null, [12, 18], [12, 41]]]], ["inline", "paper-radio", [], ["toggle", true, "label", "CEPH"], ["loc", [null, [40, 22], [40, 63]]]], ["inline", "paper-radio", [], ["toggle", true, "label", "LVM"], ["loc", [null, [43, 22], [43, 62]]]], ["block", "paper-button", [], ["raised", true, "warn", true], 1, null, ["loc", [null, [46, 20], [46, 83]]]], ["block", "paper-button", [], ["raised", true, "disabled", true], 2, null, ["loc", [null, [47, 20], [47, 87]]]]],
+        locals: [],
+        templates: [child0, child1, child2]
+      };
+    })();
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": ["wrong-type"]
+        },
+        "revision": "Ember@2.5.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 102,
+            "column": 0
+          }
+        },
+        "moduleName": "meg/templates/step3.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [101, 15]]]]],
       locals: [],
       templates: [child0]
     };
@@ -13538,211 +15268,15 @@ define("meg/templates/top", ["exports"], function (exports) {
       return {
         meta: {
           "fragmentReason": false,
-          "revision": "Ember@2.4.5",
+          "revision": "Ember@2.5.1",
           "loc": {
             "source": null,
             "start": {
               "line": 2,
-              "column": 29
-            },
-            "end": {
-              "line": 2,
-              "column": 73
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("Travis CI");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
-    var child1 = (function () {
-      var child0 = (function () {
-        var child0 = (function () {
-          return {
-            meta: {
-              "fragmentReason": false,
-              "revision": "Ember@2.4.5",
-              "loc": {
-                "source": null,
-                "start": {
-                  "line": 14,
-                  "column": 4
-                },
-                "end": {
-                  "line": 16,
-                  "column": 4
-                }
-              },
-              "moduleName": "meg/templates/top.hbs"
-            },
-            isEmpty: false,
-            arity: 1,
-            cachedFragment: null,
-            hasRendered: false,
-            buildFragment: function buildFragment(dom) {
-              var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("      ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("p");
-              var el3 = dom.createElement("span");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createTextNode(" ");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createComment("");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createTextNode(" ");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createElement("a");
-              dom.setAttribute(el3, "class", "icon-close");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n");
-              dom.appendChild(el0, el1);
-              return el0;
-            },
-            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-              var element8 = dom.childAt(fragment, [1, 0]);
-              var element9 = dom.childAt(element8, [0]);
-              var element10 = dom.childAt(element8, [4]);
-              var morphs = new Array(4);
-              morphs[0] = dom.createAttrMorph(element9, 'class');
-              morphs[1] = dom.createAttrMorph(element9, 'title');
-              morphs[2] = dom.createUnsafeMorphAt(element8, 2, 2);
-              morphs[3] = dom.createElementMorph(element10);
-              return morphs;
-            },
-            statements: [["attribute", "class", ["concat", ["broadcast-status ", ["get", "broadcast.category", ["loc", [null, [15, 45], [15, 63]]]]]]], ["attribute", "title", ["concat", ["Transmitted on ", ["get", "broadcast.updated_at", ["loc", [null, [15, 91], [15, 111]]]]]]], ["content", "broadcast.message", ["loc", [null, [15, 123], [15, 146]]]], ["element", "action", ["markBroadcastAsSeen", ["get", "broadcast", ["loc", [null, [15, 181], [15, 190]]]]], [], ["loc", [null, [15, 150], [15, 192]]]]],
-            locals: ["broadcast"],
-            templates: []
-          };
-        })();
-        var child1 = (function () {
-          return {
-            meta: {
-              "fragmentReason": false,
-              "revision": "Ember@2.4.5",
-              "loc": {
-                "source": null,
-                "start": {
-                  "line": 16,
-                  "column": 4
-                },
-                "end": {
-                  "line": 18,
-                  "column": 4
-                }
-              },
-              "moduleName": "meg/templates/top.hbs"
-            },
-            isEmpty: false,
-            arity: 0,
-            cachedFragment: null,
-            hasRendered: false,
-            buildFragment: function buildFragment(dom) {
-              var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("      ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("p");
-              var el3 = dom.createTextNode("There are no broadcasts transmitted");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n");
-              dom.appendChild(el0, el1);
-              return el0;
-            },
-            buildRenderNodes: function buildRenderNodes() {
-              return [];
-            },
-            statements: [],
-            locals: [],
-            templates: []
-          };
-        })();
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 9,
-                "column": 2
-              },
-              "end": {
-                "line": 20,
-                "column": 2
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("\n    ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createComment("");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n\n    ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("ul");
-            var el2 = dom.createTextNode("\n");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createComment("");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("    ");
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-            var element11 = dom.childAt(fragment, [3]);
-            var morphs = new Array(3);
-            morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
-            morphs[1] = dom.createAttrMorph(element11, 'class');
-            morphs[2] = dom.createMorphAt(element11, 1, 1);
-            return morphs;
-          },
-          statements: [["inline", "broadcast-tower", [], ["toggleBroadcasts", "toggleBroadcasts", "status", ["subexpr", "@mut", [["get", "broadcasts.lastBroadcastStatus", ["loc", [null, [11, 65], [11, 95]]]]], [], []]], ["loc", [null, [11, 4], [11, 97]]]], ["attribute", "class", ["concat", ["broadcasts ", ["subexpr", "if", [["get", "showBroadcasts", ["loc", [null, [13, 31], [13, 45]]]], "is-open"], [], ["loc", [null, [13, 26], [13, 57]]]]]]], ["block", "each", [["get", "broadcasts.content", ["loc", [null, [14, 12], [14, 30]]]]], [], 0, 1, ["loc", [null, [14, 4], [18, 13]]]]],
-          locals: [],
-          templates: [child0, child1]
-        };
-      })();
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 8,
               "column": 0
             },
             "end": {
-              "line": 21,
+              "line": 39,
               "column": 0
             }
           },
@@ -13754,896 +15288,169 @@ define("meg/templates/top", ["exports"], function (exports) {
         hasRendered: false,
         buildFragment: function buildFragment(dom) {
           var el0 = dom.createDocumentFragment();
-          var el1 = dom.createComment("");
+          var el1 = dom.createTextNode("            ");
           dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var morphs = new Array(1);
-          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-          dom.insertBoundary(fragment, 0);
-          dom.insertBoundary(fragment, null);
-          return morphs;
-        },
-        statements: [["block", "if", [["get", "auth.signedIn", ["loc", [null, [9, 8], [9, 21]]]]], [], 0, null, ["loc", [null, [9, 2], [20, 9]]]]],
-        locals: [],
-        templates: [child0]
-      };
-    })();
-    var child2 = (function () {
-      var child0 = (function () {
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 27,
-                "column": 6
-              },
-              "end": {
-                "line": 37,
-                "column": 6
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("li");
-            var el2 = dom.createElement("a");
-            dom.setAttribute(el2, "href", "https://blog.travis-ci.com");
-            dom.setAttribute(el2, "title", "Travis CI Blog");
-            dom.setAttribute(el2, "class", "navigation-anchor");
-            var el3 = dom.createTextNode("Blog");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("li");
-            var el2 = dom.createElement("a");
-            dom.setAttribute(el2, "href", "https://www.traviscistatus.com/");
-            dom.setAttribute(el2, "title", "Travis CI Status");
-            dom.setAttribute(el2, "class", "navigation-anchor");
-            var el3 = dom.createTextNode("Status");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("li");
-            var el2 = dom.createTextNode("\n          ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createElement("span");
-            dom.setAttribute(el2, "class", "navigation-anchor");
-            var el3 = dom.createTextNode("Help");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n          ");
-            dom.appendChild(el1, el2);
-            var el2 = dom.createElement("ul");
-            dom.setAttribute(el2, "class", "navigation-nested");
-            var el3 = dom.createTextNode("\n            ");
-            dom.appendChild(el2, el3);
-            var el3 = dom.createElement("li");
-            var el4 = dom.createElement("a");
-            dom.setAttribute(el4, "href", "https://docs.travis-ci.com");
-            var el5 = dom.createTextNode("Docs");
-            dom.appendChild(el4, el5);
-            dom.appendChild(el3, el4);
-            dom.appendChild(el2, el3);
-            var el3 = dom.createTextNode("\n            ");
-            dom.appendChild(el2, el3);
-            var el3 = dom.createElement("li");
-            var el4 = dom.createElement("a");
-            dom.setAttribute(el4, "href", "https://docs.travis-ci.com/imprint.html");
-            dom.setAttribute(el4, "alt", "Imprint");
-            var el5 = dom.createTextNode("Imprint");
-            dom.appendChild(el4, el5);
-            dom.appendChild(el3, el4);
-            dom.appendChild(el2, el3);
-            var el3 = dom.createTextNode("\n          ");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            var el2 = dom.createTextNode("\n        ");
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes() {
-            return [];
-          },
-          statements: [],
-          locals: [],
-          templates: []
-        };
-      })();
-      var child1 = (function () {
-        var child0 = (function () {
-          return {
-            meta: {
-              "fragmentReason": false,
-              "revision": "Ember@2.4.5",
-              "loc": {
-                "source": null,
-                "start": {
-                  "line": 40,
-                  "column": 8
-                },
-                "end": {
-                  "line": 44,
-                  "column": 8
-                }
-              },
-              "moduleName": "meg/templates/top.hbs"
-            },
-            isEmpty: false,
-            arity: 0,
-            cachedFragment: null,
-            hasRendered: false,
-            buildFragment: function buildFragment(dom) {
-              var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("          ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("a");
-              dom.setAttribute(el2, "href", "/about");
-              dom.setAttribute(el2, "title", "Travis CI team");
-              dom.setAttribute(el2, "class", "navigation-anchor");
-              var el3 = dom.createTextNode("About Us");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n          ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("a");
-              dom.setAttribute(el2, "href", "/plans");
-              dom.setAttribute(el2, "title", "");
-              dom.setAttribute(el2, "class", "navigation-anchor");
-              var el3 = dom.createTextNode("Plans & Pricing");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n          ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("a");
-              dom.setAttribute(el2, "href", "https://enterprise.travis-ci.com");
-              dom.setAttribute(el2, "title", "");
-              var el3 = dom.createTextNode("Enterprise");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n");
-              dom.appendChild(el0, el1);
-              return el0;
-            },
-            buildRenderNodes: function buildRenderNodes() {
-              return [];
-            },
-            statements: [],
-            locals: [],
-            templates: []
-          };
-        })();
-        var child1 = (function () {
-          return {
-            meta: {
-              "fragmentReason": false,
-              "revision": "Ember@2.4.5",
-              "loc": {
-                "source": null,
-                "start": {
-                  "line": 44,
-                  "column": 8
-                },
-                "end": {
-                  "line": 55,
-                  "column": 8
-                }
-              },
-              "moduleName": "meg/templates/top.hbs"
-            },
-            isEmpty: false,
-            arity: 0,
-            cachedFragment: null,
-            hasRendered: false,
-            buildFragment: function buildFragment(dom) {
-              var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("          ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("a");
-              dom.setAttribute(el2, "href", "https://www.traviscistatus.com/");
-              dom.setAttribute(el2, "title", "Travis CI Status");
-              dom.setAttribute(el2, "class", "navigation-anchor");
-              var el3 = dom.createTextNode("Status");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n          ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createElement("a");
-              dom.setAttribute(el2, "href", "https://docs.travis-ci.com");
-              var el3 = dom.createTextNode("Docs");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n          ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createTextNode("\n            ");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createElement("span");
-              dom.setAttribute(el2, "class", "navigation-anchor");
-              var el3 = dom.createTextNode("Legal");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n            ");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createElement("ul");
-              dom.setAttribute(el2, "class", "navigation-nested");
-              var el3 = dom.createTextNode("\n              ");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createElement("li");
-              var el4 = dom.createElement("a");
-              var el5 = dom.createTextNode("Imprint");
-              dom.appendChild(el4, el5);
-              dom.appendChild(el3, el4);
-              dom.appendChild(el2, el3);
-              var el3 = dom.createTextNode("\n              ");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createElement("li");
-              var el4 = dom.createElement("a");
-              var el5 = dom.createTextNode("Security");
-              dom.appendChild(el4, el5);
-              dom.appendChild(el3, el4);
-              dom.appendChild(el2, el3);
-              var el3 = dom.createTextNode("\n              ");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createElement("li");
-              var el4 = dom.createElement("a");
-              var el5 = dom.createTextNode("Terms");
-              dom.appendChild(el4, el5);
-              dom.appendChild(el3, el4);
-              dom.appendChild(el2, el3);
-              var el3 = dom.createTextNode("\n            ");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n          ");
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n");
-              dom.appendChild(el0, el1);
-              return el0;
-            },
-            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-              var element4 = dom.childAt(fragment, [5, 3]);
-              var element5 = dom.childAt(element4, [1, 0]);
-              var element6 = dom.childAt(element4, [3, 0]);
-              var element7 = dom.childAt(element4, [5, 0]);
-              var morphs = new Array(3);
-              morphs[0] = dom.createAttrMorph(element5, 'href');
-              morphs[1] = dom.createAttrMorph(element6, 'href');
-              morphs[2] = dom.createAttrMorph(element7, 'href');
-              return morphs;
-            },
-            statements: [["attribute", "href", ["get", "config.urls.imprint", ["loc", [null, [50, 28], [50, 47]]]]], ["attribute", "href", ["get", "config.urls.security", ["loc", [null, [51, 28], [51, 48]]]]], ["attribute", "href", ["get", "config.urls.terms", ["loc", [null, [52, 28], [52, 45]]]]]],
-            locals: [],
-            templates: []
-          };
-        })();
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 39,
-                "column": 6
-              },
-              "end": {
-                "line": 56,
-                "column": 6
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createComment("");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-            var morphs = new Array(1);
-            morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-            dom.insertBoundary(fragment, 0);
-            dom.insertBoundary(fragment, null);
-            return morphs;
-          },
-          statements: [["block", "unless", [["get", "auth.signedIn", ["loc", [null, [40, 18], [40, 31]]]]], [], 0, 1, ["loc", [null, [40, 8], [55, 19]]]]],
-          locals: [],
-          templates: [child0, child1]
-        };
-      })();
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 26,
-              "column": 4
-            },
-            "end": {
-              "line": 57,
-              "column": 4
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createComment("");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createComment("");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var morphs = new Array(2);
-          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-          morphs[1] = dom.createMorphAt(fragment, 2, 2, contextualElement);
-          dom.insertBoundary(fragment, 0);
-          dom.insertBoundary(fragment, null);
-          return morphs;
-        },
-        statements: [["block", "unless", [["get", "config.pro", ["loc", [null, [27, 16], [27, 26]]]]], [], 0, null, ["loc", [null, [27, 6], [37, 17]]]], ["block", "if", [["get", "config.pro", ["loc", [null, [39, 12], [39, 22]]]]], [], 1, null, ["loc", [null, [39, 6], [56, 13]]]]],
-        locals: [],
-        templates: [child0, child1]
-      };
-    })();
-    var child3 = (function () {
-      var child0 = (function () {
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 58,
-                "column": 6
-              },
-              "end": {
-                "line": 60,
-                "column": 6
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("        ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createElement("li");
-            var el2 = dom.createElement("a");
-            dom.setAttribute(el2, "class", "navigation-anchor");
-            dom.setAttribute(el2, "title", "Documentation");
-            dom.setAttribute(el2, "href", "https://docs.travis-ci.com");
-            var el3 = dom.createTextNode("Docs");
-            dom.appendChild(el2, el3);
-            dom.appendChild(el1, el2);
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes() {
-            return [];
-          },
-          statements: [],
-          locals: [],
-          templates: []
-        };
-      })();
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 57,
-              "column": 4
-            },
-            "end": {
-              "line": 61,
-              "column": 4
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createComment("");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var morphs = new Array(1);
-          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-          dom.insertBoundary(fragment, 0);
-          dom.insertBoundary(fragment, null);
-          return morphs;
-        },
-        statements: [["block", "if", [["get", "auth.signedIn", ["loc", [null, [58, 12], [58, 25]]]]], [], 0, null, ["loc", [null, [58, 6], [60, 13]]]]],
-        locals: [],
-        templates: [child0]
-      };
-    })();
-    var child4 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 64,
-              "column": 8
-            },
-            "end": {
-              "line": 66,
-              "column": 8
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("          ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("button");
-          dom.setAttribute(el1, "class", "signed-out button--signin");
-          var el2 = dom.createTextNode("Sign in with GitHub");
+          var el1 = dom.createElement("li");
+          dom.setAttribute(el1, "class", "gn-trigger");
+          var el2 = dom.createTextNode("\n                ");
           dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var element3 = dom.childAt(fragment, [1]);
-          var morphs = new Array(1);
-          morphs[0] = dom.createElementMorph(element3);
-          return morphs;
-        },
-        statements: [["element", "action", ["signIn"], ["target", "auth"], ["loc", [null, [65, 52], [65, 85]]]]],
-        locals: [],
-        templates: []
-      };
-    })();
-    var child5 = (function () {
-      var child0 = (function () {
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 68,
-                "column": 10
-              },
-              "end": {
-                "line": 71,
-                "column": 10
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("            ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createComment("");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n            ");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createComment("");
-            dom.appendChild(el0, el1);
-            var el1 = dom.createTextNode("\n");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-            var morphs = new Array(2);
-            morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
-            morphs[1] = dom.createMorphAt(fragment, 3, 3, contextualElement);
-            return morphs;
-          },
-          statements: [["content", "userName", ["loc", [null, [69, 12], [69, 24]]]], ["inline", "user-avatar", [], ["url", ["subexpr", "@mut", [["get", "user.avatarUrl", ["loc", [null, [70, 30], [70, 44]]]]], [], []], "name", ["subexpr", "@mut", [["get", "user.fullName", ["loc", [null, [70, 50], [70, 63]]]]], [], []]], ["loc", [null, [70, 12], [70, 65]]]]],
-          locals: [],
-          templates: []
-        };
-      })();
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 67,
-              "column": 8
-            },
-            "end": {
-              "line": 72,
-              "column": 8
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createComment("");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var morphs = new Array(1);
-          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-          dom.insertBoundary(fragment, 0);
-          dom.insertBoundary(fragment, null);
-          return morphs;
-        },
-        statements: [["block", "link-to", ["profile"], ["class", "navigation-anchor signed-in"], 0, null, ["loc", [null, [68, 10], [71, 22]]]]],
-        locals: [],
-        templates: [child0]
-      };
-    })();
-    var child6 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 73,
-              "column": 8
-            },
-            "end": {
-              "line": 75,
-              "column": 8
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("          ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("button");
-          dom.setAttribute(el1, "class", "signing-in button--signingin");
-          var el2 = dom.createTextNode("Signing In ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("span");
-          dom.setAttribute(el2, "class", "loading-indicator--white");
-          var el3 = dom.createElement("i");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("i");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("i");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
-    var child7 = (function () {
-      var child0 = (function () {
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 79,
-                "column": 14
-              },
-              "end": {
-                "line": 79,
-                "column": 62
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createTextNode("Accounts");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes() {
-            return [];
-          },
-          statements: [],
-          locals: [],
-          templates: []
-        };
-      })();
-      var child1 = (function () {
-        var child0 = (function () {
-          return {
-            meta: {
-              "fragmentReason": false,
-              "revision": "Ember@2.4.5",
-              "loc": {
-                "source": null,
-                "start": {
-                  "line": 82,
-                  "column": 14
-                },
-                "end": {
-                  "line": 86,
-                  "column": 14
-                }
-              },
-              "moduleName": "meg/templates/top.hbs"
-            },
-            isEmpty: false,
-            arity: 0,
-            cachedFragment: null,
-            hasRendered: false,
-            buildFragment: function buildFragment(dom) {
-              var el0 = dom.createDocumentFragment();
-              var el1 = dom.createTextNode("                ");
-              dom.appendChild(el0, el1);
-              var el1 = dom.createElement("li");
-              var el2 = dom.createTextNode("\n                  ");
-              dom.appendChild(el1, el2);
-              var el2 = dom.createElement("a");
-              var el3 = dom.createTextNode("Billing");
-              dom.appendChild(el2, el3);
-              dom.appendChild(el1, el2);
-              var el2 = dom.createTextNode("\n                ");
-              dom.appendChild(el1, el2);
-              dom.appendChild(el0, el1);
-              var el1 = dom.createTextNode("\n");
-              dom.appendChild(el0, el1);
-              return el0;
-            },
-            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-              var element0 = dom.childAt(fragment, [1, 1]);
-              var morphs = new Array(1);
-              morphs[0] = dom.createAttrMorph(element0, 'href');
-              return morphs;
-            },
-            statements: [["attribute", "href", ["get", "config.billingEndpoint", ["loc", [null, [84, 28], [84, 50]]]]]],
-            locals: [],
-            templates: []
-          };
-        })();
-        return {
-          meta: {
-            "fragmentReason": false,
-            "revision": "Ember@2.4.5",
-            "loc": {
-              "source": null,
-              "start": {
-                "line": 81,
-                "column": 12
-              },
-              "end": {
-                "line": 87,
-                "column": 12
-              }
-            },
-            "moduleName": "meg/templates/top.hbs"
-          },
-          isEmpty: false,
-          arity: 0,
-          cachedFragment: null,
-          hasRendered: false,
-          buildFragment: function buildFragment(dom) {
-            var el0 = dom.createDocumentFragment();
-            var el1 = dom.createComment("");
-            dom.appendChild(el0, el1);
-            return el0;
-          },
-          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-            var morphs = new Array(1);
-            morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
-            dom.insertBoundary(fragment, 0);
-            dom.insertBoundary(fragment, null);
-            return morphs;
-          },
-          statements: [["block", "unless", [["get", "config.enterprise", ["loc", [null, [82, 24], [82, 41]]]]], [], 0, null, ["loc", [null, [82, 14], [86, 25]]]]],
-          locals: [],
-          templates: [child0]
-        };
-      })();
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 76,
-              "column": 8
-            },
-            "end": {
-              "line": 92,
-              "column": 8
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("          ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("ul");
-          dom.setAttribute(el1, "class", "navigation-nested");
-          var el2 = dom.createTextNode("\n            ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("li");
-          var el3 = dom.createTextNode("\n              ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createComment("");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("\n            ");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createComment("");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("            ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("li");
-          var el3 = dom.createTextNode("\n              ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("a");
-          dom.setAttribute(el3, "href", "/");
-          var el4 = dom.createTextNode("Sign Out");
+          var el2 = dom.createElement("a");
+          dom.setAttribute(el2, "class", "gn-icon gn-icon-menu");
+          var el3 = dom.createElement("span");
+          var el4 = dom.createTextNode("Menu");
           dom.appendChild(el3, el4);
           dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("\n            ");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("\n                ");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createElement("div");
+          dom.setAttribute(el2, "class", "gn-menu-wrapper");
+          var el3 = dom.createTextNode("\n                    ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createElement("div");
+          dom.setAttribute(el3, "class", "gn-scroller");
+          var el4 = dom.createTextNode("\n                        ");
+          dom.appendChild(el3, el4);
+          var el4 = dom.createElement("ul");
+          dom.setAttribute(el4, "class", "gn-menu");
+          var el5 = dom.createTextNode("\n                            ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("li");
+          var el6 = dom.createTextNode("\n                                ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("a");
+          dom.setAttribute(el6, "href", "market-place.php");
+          var el7 = dom.createElement("i");
+          dom.setAttribute(el7, "class", "fa fa-tachometer");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode(" ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          var el8 = dom.createTextNode("Dashboard");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n                                ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          dom.setAttribute(el7, "class", "selected hidden-xs");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n                            ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n                            ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("li");
+          var el6 = dom.createTextNode("\n                                ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("a");
+          dom.setAttribute(el6, "href", "app.php");
+          var el7 = dom.createElement("i");
+          dom.setAttribute(el7, "class", "fa fa-tasks");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n                                ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          var el8 = dom.createTextNode("Apps");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n                            ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n                            ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("li");
+          var el6 = dom.createTextNode("\n                                ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("a");
+          dom.setAttribute(el6, "href", "vm-overview.php");
+          var el7 = dom.createElement("i");
+          dom.setAttribute(el7, "class", "fa fa-bar-chart");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode(" ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          var el8 = dom.createTextNode("Virtual\n                                Machines");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n                            ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n                            ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("li");
+          dom.setAttribute(el5, "class", "start active");
+          var el6 = dom.createTextNode("\n                                ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("a");
+          dom.setAttribute(el6, "href", "cloud-settings.php");
+          var el7 = dom.createElement("i");
+          dom.setAttribute(el7, "class", "fa fa-key");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n                                ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          var el8 = dom.createTextNode("SSH Keys");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n                            ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n                            ");
+          dom.appendChild(el4, el5);
+          var el5 = dom.createElement("li");
+          var el6 = dom.createTextNode("\n                                ");
+          dom.appendChild(el5, el6);
+          var el6 = dom.createElement("a");
+          dom.setAttribute(el6, "href", "billing.php");
+          var el7 = dom.createElement("i");
+          dom.setAttribute(el7, "class", "fa fa-money");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode(" ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          var el8 = dom.createTextNode("Billing");
+          dom.appendChild(el7, el8);
+          dom.appendChild(el6, el7);
+          var el7 = dom.createTextNode("\n                                ");
+          dom.appendChild(el6, el7);
+          var el7 = dom.createElement("span");
+          dom.setAttribute(el7, "class", "selected hidden-xs");
+          dom.appendChild(el6, el7);
+          dom.appendChild(el5, el6);
+          var el6 = dom.createTextNode("\n                            ");
+          dom.appendChild(el5, el6);
+          dom.appendChild(el4, el5);
+          var el5 = dom.createTextNode("\n                        ");
+          dom.appendChild(el4, el5);
+          dom.appendChild(el3, el4);
+          var el4 = dom.createTextNode("\n                    ");
+          dom.appendChild(el3, el4);
+          dom.appendChild(el2, el3);
+          var el3 = dom.createComment(" /gn-scroller ");
+          dom.appendChild(el2, el3);
+          var el3 = dom.createTextNode("\n                ");
           dom.appendChild(el2, el3);
           dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n          ");
+          var el2 = dom.createTextNode("\n            ");
           dom.appendChild(el1, el2);
           dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
+          var el1 = dom.createTextNode("\n            ");
           dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-          var element1 = dom.childAt(fragment, [1]);
-          var element2 = dom.childAt(element1, [5, 1]);
-          var morphs = new Array(3);
-          morphs[0] = dom.createMorphAt(dom.childAt(element1, [1]), 1, 1);
-          morphs[1] = dom.createMorphAt(element1, 3, 3);
-          morphs[2] = dom.createElementMorph(element2);
-          return morphs;
-        },
-        statements: [["block", "link-to", ["profile"], ["class", "signed-in"], 0, null, ["loc", [null, [79, 14], [79, 74]]]], ["block", "if", [["get", "config.billingEndpoint", ["loc", [null, [81, 18], [81, 40]]]]], [], 1, null, ["loc", [null, [81, 12], [87, 19]]]], ["element", "action", ["signOut"], ["target", "auth"], ["loc", [null, [89, 26], [89, 60]]]]],
-        locals: [],
-        templates: [child0, child1]
-      };
-    })();
-    var child8 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.4.5",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 98,
-              "column": 0
-            },
-            "end": {
-              "line": 105,
-              "column": 0
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("  ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("div");
-          dom.setAttribute(el1, "class", "cta");
-          var el2 = dom.createTextNode("\n    ");
+          var el1 = dom.createElement("li");
+          var el2 = dom.createTextNode("\n                ");
           dom.appendChild(el1, el2);
-          var el2 = dom.createElement("p");
-          dom.setAttribute(el2, "class", "row");
-          var el3 = dom.createTextNode("\n      ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("span");
-          dom.setAttribute(el3, "class", "arrow");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("\n      Help make Open Source a better place and start building better software today!\n    ");
+          var el2 = dom.createElement("a");
+          dom.setAttribute(el2, "class", "codrops-icon codrops-icon-prev add-new");
+          dom.setAttribute(el2, "href", "#new-modal");
+          var el3 = dom.createElement("i");
+          dom.setAttribute(el3, "class", "fa fa-plus");
           dom.appendChild(el2, el3);
           dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n  ");
+          var el2 = dom.createTextNode("\n            ");
           dom.appendChild(el1, el2);
           dom.appendChild(el0, el1);
           var el1 = dom.createTextNode("\n");
@@ -14664,7 +15471,7 @@ define("meg/templates/top", ["exports"], function (exports) {
           "name": "missing-wrapper",
           "problems": ["multiple-nodes", "wrong-type"]
         },
-        "revision": "Ember@2.4.5",
+        "revision": "Ember@2.5.1",
         "loc": {
           "source": null,
           "start": {
@@ -14672,7 +15479,7 @@ define("meg/templates/top", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 106,
+            "line": 101,
             "column": 0
           }
         },
@@ -14684,110 +15491,305 @@ define("meg/templates/top", ["exports"], function (exports) {
       hasRendered: false,
       buildFragment: function buildFragment(dom) {
         var el0 = dom.createDocumentFragment();
-        var el1 = dom.createElement("div");
-        var el2 = dom.createTextNode("\n  ");
-        dom.appendChild(el1, el2);
-        var el2 = dom.createElement("h1");
-        dom.setAttribute(el2, "id", "logo");
-        dom.setAttribute(el2, "class", "logo");
-        var el3 = dom.createComment("");
-        dom.appendChild(el2, el3);
-        dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n\n  ");
-        dom.appendChild(el1, el2);
-        var el2 = dom.createElement("div");
-        dom.setAttribute(el2, "class", "navigation-toggle");
-        var el3 = dom.createTextNode("\n    ");
-        dom.appendChild(el2, el3);
-        var el3 = dom.createElement("button");
-        dom.setAttribute(el3, "type", "button");
-        dom.setAttribute(el3, "id", "tofuburger");
-        dom.setAttribute(el3, "class", "tofuburger");
-        var el4 = dom.createTextNode("Toggle Menu");
-        dom.appendChild(el3, el4);
-        dom.appendChild(el2, el3);
-        var el3 = dom.createTextNode("\n  ");
-        dom.appendChild(el2, el3);
-        dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n\n");
+        var el1 = dom.createElement("ul");
+        dom.setAttribute(el1, "class", "gn-menu-main no-touch");
+        dom.setAttribute(el1, "id", "gn-menu");
+        var el2 = dom.createTextNode("\n");
         dom.appendChild(el1, el2);
         var el2 = dom.createComment("");
         dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n  ");
+        var el2 = dom.createTextNode("  ");
         dom.appendChild(el1, el2);
-        var el2 = dom.createElement("nav");
-        dom.setAttribute(el2, "id", "navigation");
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "container");
         var el3 = dom.createTextNode("\n    ");
         dom.appendChild(el2, el3);
-        var el3 = dom.createElement("ul");
-        var el4 = dom.createTextNode("\n\n");
+        var el3 = dom.createComment(" BEGIN TOP NAVIGATION BAR ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n		");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("div");
+        dom.setAttribute(el3, "class", "header-inner");
+        var el4 = dom.createTextNode("\n  		");
         dom.appendChild(el3, el4);
-        var el4 = dom.createComment("");
+        var el4 = dom.createElement("div");
+        dom.setAttribute(el4, "class", "row");
+        var el5 = dom.createTextNode("\n    		");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("div");
+        dom.setAttribute(el5, "class", "col-lg-2 col-md-2 col-sm-3 col-xs-5");
+        var el6 = dom.createTextNode("\n    		 	");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createComment(" BEGIN LOGO ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("  \n    			 ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "class", "navbar-logo");
+        dom.setAttribute(el6, "href", "http://cloud.det.io");
+        var el7 = dom.createTextNode("\n    			   ");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createElement("img");
+        dom.setAttribute(el7, "src", "http://det.io/image/logo-side.png");
+        dom.setAttribute(el7, "alt", "DET.io");
+        dom.setAttribute(el7, "class", "img-responsive");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createTextNode("\n    			 ");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n    			 ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createComment(" END LOGO ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n    		");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n        ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("div");
+        dom.setAttribute(el5, "class", "pull-right nav");
+        var el6 = dom.createTextNode(" \n          ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("a");
+        dom.setAttribute(el6, "class", "waves-effect waves-light btn modal-trigger");
+        dom.setAttribute(el6, "href", "#modal1");
+        var el7 = dom.createTextNode("Modal");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n        ");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n  		");
+        dom.appendChild(el4, el5);
         dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n      ");
-        dom.appendChild(el3, el4);
-        var el4 = dom.createElement("li");
-        var el5 = dom.createTextNode("\n");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createComment("");
-        dom.appendChild(el4, el5);
-        var el5 = dom.createTextNode("      ");
-        dom.appendChild(el4, el5);
-        dom.appendChild(el3, el4);
-        var el4 = dom.createTextNode("\n    ");
+        var el4 = dom.createTextNode("	 \n		");
         dom.appendChild(el3, el4);
         dom.appendChild(el2, el3);
         var el3 = dom.createTextNode("\n  ");
         dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n  ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment(" /container ");
         dom.appendChild(el1, el2);
         var el2 = dom.createTextNode("\n");
         dom.appendChild(el1, el2);
         dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n\n");
+        var el1 = dom.createTextNode("\n\n      ");
         dom.appendChild(el0, el1);
-        var el1 = dom.createComment("");
+        var el1 = dom.createComment(" Modal Structure ");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n  ");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createElement("div");
+        dom.setAttribute(el1, "id", "modal1");
+        dom.setAttribute(el1, "class", "modal bottom-sheet");
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "modal-content");
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("h4");
+        var el4 = dom.createTextNode("Modal Header");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("ul");
+        dom.setAttribute(el3, "class", "collection");
+        var el4 = dom.createTextNode("\n              ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("li");
+        dom.setAttribute(el4, "class", "collection-item avatar");
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("img");
+        dom.setAttribute(el5, "src", "images/yuna.jpg");
+        dom.setAttribute(el5, "alt", "");
+        dom.setAttribute(el5, "class", "circle");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("span");
+        dom.setAttribute(el5, "class", "title");
+        var el6 = dom.createTextNode("Title");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("p");
+        var el6 = dom.createTextNode("First Line ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("br");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                   Second Line\n                ");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("a");
+        dom.setAttribute(el5, "href", "#!");
+        dom.setAttribute(el5, "class", "secondary-content");
+        var el6 = dom.createElement("i");
+        dom.setAttribute(el6, "class", "material-icons");
+        var el7 = dom.createTextNode("grade");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n              ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n              ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("li");
+        dom.setAttribute(el4, "class", "collection-item avatar");
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("i");
+        dom.setAttribute(el5, "class", "material-icons circle");
+        var el6 = dom.createTextNode("folder");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("span");
+        dom.setAttribute(el5, "class", "title");
+        var el6 = dom.createTextNode("Title");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("p");
+        var el6 = dom.createTextNode("First Line ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("br");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                   Second Line\n                ");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("a");
+        dom.setAttribute(el5, "href", "#!");
+        dom.setAttribute(el5, "class", "secondary-content");
+        var el6 = dom.createElement("i");
+        dom.setAttribute(el6, "class", "material-icons");
+        var el7 = dom.createTextNode("grade");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n              ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n              ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("li");
+        dom.setAttribute(el4, "class", "collection-item avatar");
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("i");
+        dom.setAttribute(el5, "class", "material-icons circle green");
+        var el6 = dom.createTextNode("assessment");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("span");
+        dom.setAttribute(el5, "class", "title");
+        var el6 = dom.createTextNode("Title");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("p");
+        var el6 = dom.createTextNode("First Line ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("br");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                   Second Line\n                ");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("a");
+        dom.setAttribute(el5, "href", "#!");
+        dom.setAttribute(el5, "class", "secondary-content");
+        var el6 = dom.createElement("i");
+        dom.setAttribute(el6, "class", "material-icons");
+        var el7 = dom.createTextNode("grade");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n              ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n              ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("li");
+        dom.setAttribute(el4, "class", "collection-item avatar");
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("i");
+        dom.setAttribute(el5, "class", "material-icons circle red");
+        var el6 = dom.createTextNode("play_arrow");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("span");
+        dom.setAttribute(el5, "class", "title");
+        var el6 = dom.createTextNode("Title");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("p");
+        var el6 = dom.createTextNode("First Line ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("br");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                   Second Line\n                ");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("a");
+        dom.setAttribute(el5, "href", "#!");
+        dom.setAttribute(el5, "class", "secondary-content");
+        var el6 = dom.createElement("i");
+        dom.setAttribute(el6, "class", "material-icons");
+        var el7 = dom.createTextNode("grade");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n              ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n            ");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n          ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n  ");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n          \n");
         dom.appendChild(el0, el1);
         return el0;
       },
       buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-        var element12 = dom.childAt(fragment, [0]);
-        var element13 = dom.childAt(element12, [3, 1]);
-        var element14 = dom.childAt(element12, [7]);
-        var element15 = dom.childAt(element14, [1]);
-        var element16 = dom.childAt(element15, [3]);
-        var morphs = new Array(12);
-        morphs[0] = dom.createAttrMorph(element12, 'class');
-        morphs[1] = dom.createMorphAt(dom.childAt(element12, [1]), 0, 0);
-        morphs[2] = dom.createElementMorph(element13);
-        morphs[3] = dom.createMorphAt(element12, 5, 5);
-        morphs[4] = dom.createAttrMorph(element14, 'class');
-        morphs[5] = dom.createMorphAt(element15, 1, 1);
-        morphs[6] = dom.createAttrMorph(element16, 'class');
-        morphs[7] = dom.createMorphAt(element16, 1, 1);
-        morphs[8] = dom.createMorphAt(element16, 2, 2);
-        morphs[9] = dom.createMorphAt(element16, 3, 3);
-        morphs[10] = dom.createMorphAt(element16, 4, 4);
-        morphs[11] = dom.createMorphAt(fragment, 2, 2, contextualElement);
-        dom.insertBoundary(fragment, null);
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(dom.childAt(fragment, [0]), 1, 1);
         return morphs;
       },
-      statements: [["attribute", "class", ["concat", ["topbar ", ["subexpr", "if", [["get", "is-open", ["loc", [null, [1, 24], [1, 31]]]], "has-autoheight"], [], ["loc", [null, [1, 19], [1, 50]]]], " ", ["subexpr", "if", [["get", "showBroadcasts", ["loc", [null, [1, 56], [1, 70]]]], "has-autoheight"], [], ["loc", [null, [1, 51], [1, 89]]]]]]], ["block", "link-to", ["main"], ["alt", "Travis CI"], 0, null, ["loc", [null, [2, 29], [2, 85]]]], ["element", "action", ["toggleBurgerMenu"], [], ["loc", [null, [5, 61], [5, 90]]]], ["block", "unless", [["get", "config.enterprise", ["loc", [null, [8, 10], [8, 27]]]]], [], 1, null, ["loc", [null, [8, 0], [21, 11]]]], ["attribute", "class", ["concat", ["navigation ", ["subexpr", "if", [["get", "is-open", ["loc", [null, [23, 46], [23, 53]]]], "is-open"], [], ["loc", [null, [23, 41], [23, 65]]]]]]], ["block", "unless", [["get", "config.enterprise", ["loc", [null, [26, 14], [26, 31]]]]], [], 2, 3, ["loc", [null, [26, 4], [61, 15]]]], ["attribute", "class", ["concat", [["get", "classProfile", ["loc", [null, [63, 19], [63, 31]]]]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [64, 14], [64, 28]]]]], [], 4, null, ["loc", [null, [64, 8], [66, 15]]]], ["block", "if", [["get", "auth.signedIn", ["loc", [null, [67, 14], [67, 27]]]]], [], 5, null, ["loc", [null, [67, 8], [72, 15]]]], ["block", "if", [["get", "auth.signingIn", ["loc", [null, [73, 14], [73, 28]]]]], [], 6, null, ["loc", [null, [73, 8], [75, 15]]]], ["block", "if", [["get", "auth.signedIn", ["loc", [null, [76, 14], [76, 27]]]]], [], 7, null, ["loc", [null, [76, 8], [92, 15]]]], ["block", "if", [["get", "showCta", ["loc", [null, [98, 6], [98, 13]]]]], [], 8, null, ["loc", [null, [98, 0], [105, 7]]]]],
+      statements: [["block", "if", [["get", "auth.signedIn", ["loc", [null, [2, 6], [2, 19]]]]], [], 0, null, ["loc", [null, [2, 0], [39, 7]]]]],
       locals: [],
-      templates: [child0, child1, child2, child3, child4, child5, child6, child7, child8]
+      templates: [child0]
     };
   })());
 });
-define('meg/utils/ajax', ['exports', 'meg/utils/is-fastboot'], function (exports, _megUtilsIsFastboot) {
-  exports['default'] = _megUtilsIsFastboot['default'] ? najax : $.ajax;
-});
-/* global najax */
-//import Ember from 'ember';
 define("meg/utils/computed-limit", ["exports", "ember"], function (exports, _ember) {
 
   var limit = function limit(dependentKey, limitKey) {
@@ -14801,6 +15803,70 @@ define("meg/utils/computed-limit", ["exports", "ember"], function (exports, _emb
 
   exports["default"] = limit;
 });
+define('meg/utils/document-title', ['exports', 'ember'], function (exports, _ember) {
+    function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
+    var Route = _ember['default'].Route;
+    var Router = _ember['default'].Router;
+    var isArray = _ember['default'].isArray;
+    var on = _ember['default'].on;
+
+    exports['default'] = function () {
+        Route.reopen({
+            // `titleToken` can either be a static string or a function
+            // that accepts a model object and returns a string (or array
+            // of strings if there are multiple tokens).
+            titleToken: null,
+
+            // `title` can either be a static string or a function
+            // that accepts an array of tokens and returns a string
+            // that will be the document title. The `collectTitleTokens` action
+            // stops bubbling once a route is encountered that has a `title`
+            // defined.
+            title: null,
+
+            actions: {
+                collectTitleTokens: function collectTitleTokens(tokens) {
+                    var titleToken = this.titleToken;
+
+                    var finalTitle = undefined;
+
+                    if (typeof this.titleToken === 'function') {
+                        titleToken = this.titleToken(this.currentModel);
+                    }
+
+                    if (isArray(titleToken)) {
+                        tokens.unshift.apply(tokens, _toConsumableArray(titleToken));
+                    } else if (titleToken) {
+                        tokens.unshift(titleToken);
+                    }
+
+                    if (this.title) {
+                        if (typeof this.title === 'function') {
+                            finalTitle = this.title(tokens);
+                        } else {
+                            finalTitle = this.title;
+                        }
+
+                        this.router.setTitle(finalTitle);
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        });
+
+        Router.reopen({
+            updateTitle: on('didTransition', function () {
+                this.send('collectTitleTokens', []);
+            }),
+
+            setTitle: function setTitle(title) {
+                window.document.title = title;
+            }
+        });
+    };
+});
 define("meg/utils/email-validation", ["exports"], function (exports) {
   exports["default"] = {
     emailRegex: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -14811,6 +15877,28 @@ define('meg/utils/grid-layout', ['exports', 'ember-paper/utils/grid-layout'], fu
     enumerable: true,
     get: function get() {
       return _emberPaperUtilsGridLayout['default'];
+    }
+  });
+});
+define('meg/utils/hash-storage', ['exports', 'ember'], function (exports, _ember) {
+  exports['default'] = _ember['default'].Object.extend({
+    init: function init() {
+      return this.set('storage', {});
+    },
+    key: function key(_key) {
+      return "__" + _key.replace('.', '__');
+    },
+    getItem: function getItem(k) {
+      return this.get("storage." + this.key(k));
+    },
+    setItem: function setItem(k, v) {
+      return this.set("storage." + this.key(k), v);
+    },
+    removeItem: function removeItem(k) {
+      return this.setItem(k, null);
+    },
+    clear: function clear() {
+      return this.set('storage', {});
     }
   });
 });
@@ -14907,6 +15995,8 @@ define('meg/utils/url-helpers', ['exports', 'meg/utils/is-fastboot'], function (
 
   function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
+  function _typeof(obj) { return obj && obj.constructor === Symbol ? 'symbol' : typeof obj; }
+
   var absoluteUrlRegex = /^(http|https)/;
 
   /*
@@ -14914,7 +16004,7 @@ define('meg/utils/url-helpers', ['exports', 'meg/utils/is-fastboot'], function (
    * Borrowed from
    * http://www.sitepoint.com/url-parsing-isomorphic-javascript/
    */
-  var isNode = typeof module === 'object' && module.exports;
+  var isNode = (typeof module === 'undefined' ? 'undefined' : _typeof(module)) === 'object' && module.exports;
   var url = getUrlModule();
 
   /**
@@ -15042,6 +16132,275 @@ define('meg/utils/utils', ['exports', 'ember'], function (exports, _ember) {
     }
   };
 });
+define('meg/utils/validator-extensions', ['exports', 'ember'], function (exports, _ember) {
+    var isBlank = _ember['default'].isBlank;
+
+    function init() {
+        // Provide a few custom validators
+        //
+        validator.extend('empty', function (str) {
+            return isBlank(str);
+        });
+
+        validator.extend('notContains', function (str, badString) {
+            return str.indexOf(badString) === -1;
+        });
+    }
+
+    exports['default'] = {
+        init: init
+    };
+});
+define('meg/validators/base', ['exports', 'ember'], function (exports, _ember) {
+
+    /**
+     * Base validator that all validators should extend
+     * Handles checking of individual properties or the entire model
+     */
+    exports['default'] = _ember['default'].Object.extend({
+        properties: [],
+        passed: false,
+
+        /**
+         * When passed a model and (optionally) a property name,
+         * checks it against a list of validation functions
+         * @param  {Ember.Object} model Model to validate
+         * @param  {string} prop  Property name to check
+         * @return {boolean}      True if the model passed all (or one) validation(s),
+         *                        false if not
+         */
+        check: function check(model, prop) {
+            var _this = this;
+
+            this.set('passed', true);
+            console.log("000000000000000000000000000000000000000000000000");
+            console.log(prop);
+            console.log(this[prop]);
+            if (prop && this[prop]) {
+                console.log("---------------if------------------");
+                this[prop](model);
+            } else {
+                console.log("---------------else------------------");
+                console.log(this.get('properties'));
+                this.get('properties').forEach(function (property) {
+                    console.log("--------------------------------");
+                    console.log(_this[property]);
+                    if (_this[property]) {
+                        console.log(_this[property](model));
+                        _this[property](model);
+                    }
+                });
+            }
+            console.log("999999999999999999999999999999999999");
+            return this.get('passed');
+        },
+
+        invalidate: function invalidate() {
+            this.set('passed', false);
+        }
+    });
+});
+define('meg/validators/nav-item', ['exports', 'meg/validators/base'], function (exports, _megValidatorsBase) {
+    exports['default'] = _megValidatorsBase['default'].create({
+        properties: ['label', 'url'],
+
+        label: function label(model) {
+            var label = model.get('label');
+            var hasValidated = model.get('hasValidated');
+
+            if (validator.empty(label)) {
+                model.get('errors').add('label', 'You must specify a label');
+                this.invalidate();
+            }
+
+            hasValidated.addObject('label');
+        },
+
+        url: function url(model) {
+            var url = model.get('url');
+            var hasValidated = model.get('hasValidated');
+            /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
+            var validatorOptions = { require_protocol: true };
+            /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
+            var urlRegex = new RegExp(/^(\/|#|[a-zA-Z0-9\-]+:)/);
+
+            if (validator.empty(url)) {
+                model.get('errors').add('url', 'You must specify a URL or relative path');
+                this.invalidate();
+            } else if (url.match(/\s/) || !validator.isURL(url, validatorOptions) && !url.match(urlRegex)) {
+                model.get('errors').add('url', 'You must specify a valid URL or relative path');
+                this.invalidate();
+            }
+
+            hasValidated.addObject('url');
+        }
+    });
+});
+define('meg/validators/new-user', ['exports', 'meg/validators/base'], function (exports, _megValidatorsBase) {
+    exports['default'] = _megValidatorsBase['default'].extend({
+        properties: ['name', 'email', 'password'],
+
+        name: function name(model) {
+            var name = model.get('name');
+
+            if (!validator.isLength(name, 1)) {
+                model.get('errors').add('name', 'Please enter a name.');
+                this.invalidate();
+            }
+        },
+
+        email: function email(model) {
+            var email = model.get('email');
+
+            if (validator.empty(email)) {
+                model.get('errors').add('email', 'Please enter an email.');
+                this.invalidate();
+            } else if (!validator.isEmail(email)) {
+                model.get('errors').add('email', 'Invalid Email.');
+                this.invalidate();
+            }
+        },
+
+        password: function password(model) {
+            var password = model.get('password');
+
+            if (!validator.isLength(password, 8)) {
+                model.get('errors').add('password', 'Password must be at least 8 characters long');
+                this.invalidate();
+            }
+        }
+    });
+});
+define('meg/validators/signin', ['exports', 'meg/validators/base'], function (exports, _megValidatorsBase) {
+    exports['default'] = _megValidatorsBase['default'].create({
+        properties: ['identification', 'signin', 'forgotPassword'],
+        invalidMessage: 'Email address is not valid',
+
+        identification: function identification(model) {
+            var id = model.get('identification');
+
+            if (!validator.empty(id) && !validator.isEmail(id)) {
+                model.get('errors').add('identification', this.get('invalidMessage'));
+                this.invalidate();
+            }
+        },
+
+        signin: function signin(model) {
+            var id = model.get('identification');
+            var password = model.get('password');
+
+            model.get('errors').clear();
+
+            if (validator.empty(id)) {
+                model.get('errors').add('identification', 'Please enter an email');
+                this.invalidate();
+            }
+
+            if (!validator.empty(id) && !validator.isEmail(id)) {
+                model.get('errors').add('identification', this.get('invalidMessage'));
+                this.invalidate();
+            }
+
+            if (validator.empty(password)) {
+                model.get('errors').add('password', 'Please enter a password');
+                this.invalidate();
+            }
+        },
+
+        forgotPassword: function forgotPassword(model) {
+            var id = model.get('identification');
+
+            model.get('errors').clear();
+
+            if (validator.empty(id) || !validator.isEmail(id)) {
+                model.get('errors').add('identification', this.get('invalidMessage'));
+                this.invalidate();
+            }
+        }
+    });
+});
+define('meg/validators/signup', ['exports', 'ghost/validators/new-user'], function (exports, _ghostValidatorsNewUser) {
+  exports['default'] = _ghostValidatorsNewUser['default'].create();
+});
+define('meg/validators/user', ['exports', 'meg/validators/base'], function (exports, _megValidatorsBase) {
+    exports['default'] = _megValidatorsBase['default'].create({
+        properties: ['name', 'bio', 'email', 'location', 'website', 'roles'],
+
+        isActive: function isActive(model) {
+            return model.get('status') === 'active';
+        },
+
+        name: function name(model) {
+            var name = model.get('name');
+
+            if (this.isActive(model)) {
+                if (validator.empty(name)) {
+                    model.get('errors').add('name', 'Please enter a name.');
+                    this.invalidate();
+                } else if (!validator.isLength(name, 0, 150)) {
+                    model.get('errors').add('name', 'Name is too long');
+                    this.invalidate();
+                }
+            }
+        },
+
+        bio: function bio(model) {
+            var bio = model.get('bio');
+
+            if (this.isActive(model)) {
+                if (!validator.isLength(bio, 0, 200)) {
+                    model.get('errors').add('bio', 'Bio is too long');
+                    this.invalidate();
+                }
+            }
+        },
+
+        email: function email(model) {
+            var email = model.get('email');
+
+            if (!validator.isEmail(email)) {
+                model.get('errors').add('email', 'Please supply a valid email address');
+                this.invalidate();
+            }
+        },
+
+        location: function location(model) {
+            var location = model.get('location');
+
+            if (this.isActive(model)) {
+                if (!validator.isLength(location, 0, 150)) {
+                    model.get('errors').add('location', 'Location is too long');
+                    this.invalidate();
+                }
+            }
+        },
+
+        website: function website(model) {
+            var website = model.get('website');
+
+            /* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
+            if (this.isActive(model)) {
+                if (!validator.empty(website) && (!validator.isURL(website, { require_protocol: false }) || !validator.isLength(website, 0, 2000))) {
+
+                    model.get('errors').add('website', 'Website is not a valid url');
+                    this.invalidate();
+                }
+            }
+            /* jscs:enable requireCamelCaseOrUpperCaseIdentifiers */
+        },
+
+        roles: function roles(model) {
+            if (!this.isActive(model)) {
+                var roles = model.get('roles');
+
+                if (roles.length < 1) {
+                    model.get('errors').add('role', 'Please select a role');
+                    this.invalidate();
+                }
+            }
+        }
+    });
+});
 /* jshint ignore:start */
 
 
@@ -15074,7 +16433,7 @@ catch(err) {
 /* jshint ignore:start */
 
 if (!runningTests) {
-  require("meg/app")["default"].create({"name":"meg","version":"0.0.0+4b14f813"});
+  require("meg/app")["default"].create({"LOG_ACTIVE_GENERATION":true,"LOG_TRANSITIONS":true,"LOG_TRANSITIONS_INTERNAL":true,"LOG_VIEW_LOOKUPS":true,"name":"meg","version":"0.0.0+5b03d3a0"});
 }
 
 /* jshint ignore:end */

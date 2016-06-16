@@ -1,0 +1,18 @@
+<div class="row col-md-12">
+     <div class="col-md-3">
+       <h3>{{t "step2.host"}}{{number}}</h3>
+     </div>
+        <div class="col-md-3">
+            {{input value=model.ipaddress placeholder="Enter a Ip Address..." type="text"}}
+        </div>
+        <div class="col-md-3">
+            {{input value=model.username placeholder="Enter a name..." type="text"}}
+        </div>
+        <div class="col-md-3">
+            {{input value=model.password placeholder="And password..." type="password"}}
+        </div>
+  </div>
+      {{#if isButtonVisible}}
+        <button class="button" {{action 'validateAndAuthenticate'}}>Add Host</button>
+        <button class="button" {{action 'done'}}>Done</button>
+      {{/if}}

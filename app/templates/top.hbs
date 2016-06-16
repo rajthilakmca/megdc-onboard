@@ -1,105 +1,100 @@
-<div class="topbar {{if is-open 'has-autoheight'}} {{if showBroadcasts 'has-autoheight'}}">
-  <h1 id="logo" class="logo">{{#link-to "main" alt="Travis CI"}}Travis CI{{/link-to}}</h1>
-
-  <div class="navigation-toggle">
-    <button type="button" id="tofuburger" class="tofuburger" {{action 'toggleBurgerMenu'}}>Toggle Menu</button>
-  </div>
-
-{{#unless config.enterprise}}
-  {{#if auth.signedIn}}
-
-    {{broadcast-tower toggleBroadcasts="toggleBroadcasts" status=broadcasts.lastBroadcastStatus}}
-
-    <ul class="broadcasts {{if showBroadcasts 'is-open'}}">
-    {{#each broadcasts.content as |broadcast|}}
-      <li><p><span class="broadcast-status {{broadcast.category}}" title="Transmitted on {{broadcast.updated_at}}"></span> {{{broadcast.message}}} <a {{action 'markBroadcastAsSeen' broadcast}} class="icon-close"></a></p></li>
-    {{else}}
-      <li><p>There are no broadcasts transmitted</p></li>
-    {{/each}}
-    </ul>
-  {{/if}}
-{{/unless}}
-
-  <nav id="navigation" class="navigation {{if is-open 'is-open'}}">
-    <ul>
-
-    {{#unless config.enterprise}}
-      {{#unless config.pro}}
-        <li><a href="https://blog.travis-ci.com" title="Travis CI Blog" class="navigation-anchor">Blog</a></li>
-        <li><a href="https://www.traviscistatus.com/" title="Travis CI Status" class="navigation-anchor">Status</a></li>
-        <li>
-          <span class="navigation-anchor">Help</span>
-          <ul class="navigation-nested">
-            <li><a href="https://docs.travis-ci.com">Docs</a></li>
-            <li><a href="https://docs.travis-ci.com/imprint.html" alt="Imprint">Imprint</a></li>
-          </ul>
-        </li>
-      {{/unless}}
-
-      {{#if config.pro}}
-        {{#unless auth.signedIn}}
-          <li><a href="/about" title="Travis CI team" class="navigation-anchor">About Us</a></li>
-          <li><a href="/plans" title="" class="navigation-anchor">Plans & Pricing</a></li>
-          <li><a href="https://enterprise.travis-ci.com" title="">Enterprise</a></li>
-        {{else}}
-          <li><a href="https://www.traviscistatus.com/" title="Travis CI Status" class="navigation-anchor">Status</a></li>
-          <li><a href="https://docs.travis-ci.com">Docs</a></li>
-          <li>
-            <span class="navigation-anchor">Legal</span>
-            <ul class="navigation-nested">
-              <li><a href={{config.urls.imprint}}>Imprint</a></li>
-              <li><a href={{config.urls.security}}>Security</a></li>
-              <li><a href={{config.urls.terms}}>Terms</a></li>
-            </ul>
-          </li>
-        {{/unless}}
-      {{/if}}
-    {{else}}
-      {{#if auth.signedIn}}
-        <li><a class="navigation-anchor" title="Documentation" href="https://docs.travis-ci.com">Docs</a></li>
-      {{/if}}
-    {{/unless}}
-
-      <li class="{{classProfile}}">
-        {{#if auth.signedOut}}
-          <button class="signed-out button--signin" {{action "signIn" target="auth"}}>Sign in with GitHub</button>
-        {{/if}}
-        {{#if auth.signedIn}}
-          {{#link-to "profile" class="navigation-anchor signed-in"}}
-            {{userName}}
-            {{user-avatar url=user.avatarUrl name=user.fullName}}
-          {{/link-to}}
-        {{/if}}
-        {{#if auth.signingIn}}
-          <button class="signing-in button--signingin">Signing In <span class="loading-indicator--white"><i></i><i></i><i></i></span></button>
-        {{/if}}
-        {{#if auth.signedIn}}
-          <ul class="navigation-nested">
-            <li>
-              {{#link-to "profile" class="signed-in"}}Accounts{{/link-to}}
+<ul class="gn-menu-main no-touch" id="gn-menu">
+{{#if auth.signedIn}}
+            <li class="gn-trigger">
+                <a class="gn-icon gn-icon-menu"><span>Menu</span></a>
+                <div class="gn-menu-wrapper">
+                    <div class="gn-scroller">
+                        <ul class="gn-menu">
+                            <li>
+                                <a href="market-place.php"><i class=
+                                "fa fa-tachometer"></i> <span>Dashboard</span>
+                                <span class="selected hidden-xs"></span></a>
+                            </li>
+                            <li>
+                                <a href="app.php"><i class="fa fa-tasks"></i>
+                                <span>Apps</span></a>
+                            </li>
+                            <li>
+                                <a href="vm-overview.php"><i class=
+                                "fa fa-bar-chart"></i> <span>Virtual
+                                Machines</span></a>
+                            </li>
+                            <li class="start active">
+                                <a href="cloud-settings.php"><i class="fa fa-key"></i>
+                                <span>SSH Keys</span></a>
+                            </li>
+                            <li>
+                                <a href="billing.php"><i class=
+                                "fa fa-money"></i> <span>Billing</span>
+                                <span class="selected hidden-xs"></span></a>
+                            </li>
+                        </ul>
+                    </div><!-- /gn-scroller -->
+                </div>
             </li>
-            {{#if config.billingEndpoint}}
-              {{#unless config.enterprise}}
-                <li>
-                  <a href={{config.billingEndpoint}}>Billing</a>
-                </li>
-              {{/unless}}
-            {{/if}}
             <li>
-              <a href="/" {{action "signOut" target="auth"}}>Sign Out</a>
+                <a class="codrops-icon codrops-icon-prev add-new" href=
+                "#new-modal"><i class="fa fa-plus"></i></a>
             </li>
-          </ul>
-        {{/if}}
-      </li>
-    </ul>
-  </nav>
-</div>
-
-{{#if showCta}}
-  <div class="cta">
-    <p class="row">
-      <span class="arrow"></span>
-      Help make Open Source a better place and start building better software today!
-    </p>
-  </div>
 {{/if}}
+  <div class="container">
+    <!-- BEGIN TOP NAVIGATION BAR -->
+		<div class="header-inner">
+  		<div class="row">
+    		<div class="col-lg-2 col-md-2 col-sm-3 col-xs-5">
+    		 	<!-- BEGIN LOGO -->  
+    			 <a class="navbar-logo" href="http://cloud.det.io">
+    			   <img src="http://det.io/image/logo-side.png" alt="DET.io" class="img-responsive" />
+    			 </a>
+    			 <!-- END LOGO -->
+    		</div>
+        <div class="pull-right nav"> 
+          <a class="waves-effect waves-light btn modal-trigger" href="#modal1">Modal</a>
+        </div>
+  		</div>	 
+		</div>
+  </div>
+  <!-- /container -->
+</ul>
+
+      <!-- Modal Structure -->
+  <div id="modal1" class="modal bottom-sheet">
+<div class="modal-content">
+            <h4>Modal Header</h4>
+            <ul class="collection">
+              <li class="collection-item avatar">
+                <img src="images/yuna.jpg" alt="" class="circle">
+                <span class="title">Title</span>
+                <p>First Line <br>
+                   Second Line
+                </p>
+                <a href="#!" class="secondary-content"><i class="material-icons">grade</i></a>
+              </li>
+              <li class="collection-item avatar">
+                <i class="material-icons circle">folder</i>
+                <span class="title">Title</span>
+                <p>First Line <br>
+                   Second Line
+                </p>
+                <a href="#!" class="secondary-content"><i class="material-icons">grade</i></a>
+              </li>
+              <li class="collection-item avatar">
+                <i class="material-icons circle green">assessment</i>
+                <span class="title">Title</span>
+                <p>First Line <br>
+                   Second Line
+                </p>
+                <a href="#!" class="secondary-content"><i class="material-icons">grade</i></a>
+              </li>
+              <li class="collection-item avatar">
+                <i class="material-icons circle red">play_arrow</i>
+                <span class="title">Title</span>
+                <p>First Line <br>
+                   Second Line
+                </p>
+                <a href="#!" class="secondary-content"><i class="material-icons">grade</i></a>
+              </li>
+            </ul>
+          </div>
+  </div>
+          

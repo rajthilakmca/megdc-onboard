@@ -4,9 +4,15 @@
             {{#if labelWrapperClass}}
                 <div class={{labelWrapperClass}}>
                     {{partial 'components/formgroup/control-within-label'}}
+                {{#if v_icons}}
+                    {{form-control-feedback icon=v_icon}}
+                {{/if}}    
                 </div>
             {{else}}
                 {{partial 'components/formgroup/control-within-label'}}
+                {{#if v_icons}}
+                    {{form-control-feedback icon=v_icon}}
+                {{/if}}        
             {{/if}}
         {{else}}
             {{#if labelWrapperClass}}
@@ -14,17 +20,25 @@
                     {{em-form-label text=label viewName=labelViewName}}
                     {{partial 'components/formgroup/form-group-control'}}
                 </div>
+               {{#if v_icons}}
+                    {{form-control-feedback icon=v_icon}}
+                {{/if}}
             {{else}}
-                {{em-form-label text=label viewName=labelViewName}}
+            <div class="row">
+                {{em-form-label 
+                text=label
+                viewName=labelViewName
+                extraClass="col-sm-2"
+                }}
                 {{partial 'components/formgroup/form-group-control'}}
+                {{#if v_icons}}
+                    {{form-control-feedback icon=v_icon}}
+                {{/if}}
+            </div>
             {{/if}}
         {{/if}}
     {{else}}
         {{partial 'components/formgroup/form-group-control'}}
-    {{/if}}
-
-    {{#if v_icons}}
-        <span class="form-control-feedback"><i class={{v_icon}}></i></span>
     {{/if}}
 
     {{!Currently no errors when layout is inline}}
