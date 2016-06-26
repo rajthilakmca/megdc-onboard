@@ -1,9 +1,12 @@
-<div id="top" class="top landing-page">
-  {{render "top"}}
+<div class="wrapper">
+    <div id="top" class="top landing-page">
+      {{render "top"}}
+    </div>
+    
+    {{flash-display}}
+    <div class="main">
+        {{yield}}
+    </div>
+    
+    {{render "footer"}}
 </div>
-
-{{flash-display}}
-
-{{yield}}
-
-{{render "footer"}}

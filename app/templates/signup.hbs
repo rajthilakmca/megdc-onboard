@@ -14,14 +14,18 @@
               {{em-input label="Password" property="passwordConfirmation" placeholder="And password..." type="password" disabled=nameHasValue}}
               <p>
                 {{#if auth.signedOut}}
-                  <button {{action "createAccount" }} class="button"><img src="../images/landing-page/sign-in-mascot.svg" class="sign-in-mascot">{{t "signup.create"}}</button>
+                  <button {{action "createAccount" }} class="btn waves-effect waves-light mainColor">
+                    {{t "signup.create"}} <i class="material-icons right">input</i>
+                  </button>
                 {{/if}}
                 {{#if auth.signingIn}}
-                  <button class="button"><span class="loading-indicator--white"><i></i><i></i><i></i></span>{{t "signup.onboarding"}}</button>
+                  <button class="btn waves-effect waves-light mainColor">
+                  {{t "signup.onboarding"}} <i class="fa fa-circle-o-notch fa-spin"></i>
+                  </button>
                 {{/if}}
               </p>
               <p class="change_link">
-                Already a member ?
+                Already a member?
                 <button class="signed-out button--signin" {{ action "signinPage"}}>{{t "signup.signin"}}</button>
               </p>
             {{/em-form}}

@@ -19,18 +19,15 @@ span.form-control-feedback.updated {
     width: auto;
     height: 34px;
 }
-.main, .profile-view {
-    min-height: 68vh;
-}
 .footer {
+    position: relative;
+    margin-top: -177.36px; /* negative value of footer height */
     padding: 20px 0 0;
     background-color: #54a0c0;
-    position: absolute;
-    left: 0;
-    bottom: 0;
     width: 100%;
     overflow: hidden;
 }
+
 .footer-copyright {
     background-color: #3c738f;
     min-height: 3vh;

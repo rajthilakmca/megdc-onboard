@@ -13315,9 +13315,9 @@ ul.gn-submenu > li > a.more {
 
 .main,
 .profile-view {
+  min-height: 92.3vh;
   position: relative;
   width: 100%;
-  min-height: 100vh;
   background-color: white; }
 
 .inner {
@@ -15481,15 +15481,12 @@ span.form-control-feedback.updated {
   width: auto;
   height: 34px; }
 
-.main, .profile-view {
-  min-height: 68vh; }
-
 .footer {
+  position: relative;
+  margin-top: -177.36px;
+  /* negative value of footer height */
   padding: 20px 0 0;
   background-color: #54a0c0;
-  position: absolute;
-  left: 0;
-  bottom: 0;
   width: 100%;
   overflow: hidden; }
 

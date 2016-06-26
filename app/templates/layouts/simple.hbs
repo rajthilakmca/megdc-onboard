@@ -9,8 +9,10 @@
       {{yield}}
     </div>
   </div>
+  
+  {{notification-container notifications=notifications position="top-right"}}
+  
+  <footer>
+    {{render "footer"}}
+  </footer>
 </div>
-{{notification-container notifications=notifications position="top-right"}}
-<footer>
-  {{render "footer"}}
-</footer>

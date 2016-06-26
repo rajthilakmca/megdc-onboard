@@ -2609,7 +2609,7 @@ define('meg/locales/en/translations', ['exports'], function (exports) {
   exports['default'] = {
     'landingpage': {
       'title': 'Automated Installer',
-      'description': 'Easily setup and upgrade your datacenter in minutes!',
+      'description': 'Easily launch & configuire a full Cloud Platform',
       'signup': 'Sign Up'
     },
     'signup': {
@@ -11384,7 +11384,7 @@ define("meg/templates/home", ["exports"], function (exports) {
           dom.appendChild(el6, el7);
           var el7 = dom.createElement("h5");
           dom.setAttribute(el7, "class", "center offsetColor-text");
-          var el8 = dom.createTextNode("Speeds up development");
+          var el8 = dom.createTextNode("Deploys instantly");
           dom.appendChild(el7, el8);
           dom.appendChild(el6, el7);
           var el7 = dom.createTextNode("\n\n            ");
@@ -11460,7 +11460,7 @@ define("meg/templates/home", ["exports"], function (exports) {
           dom.appendChild(el6, el7);
           var el7 = dom.createElement("h5");
           dom.setAttribute(el7, "class", "center offsetColor-text");
-          var el8 = dom.createTextNode("Easy to work with");
+          var el8 = dom.createTextNode("Configuirable");
           dom.appendChild(el7, el8);
           dom.appendChild(el6, el7);
           var el7 = dom.createTextNode("\n\n            ");
@@ -11836,8 +11836,7 @@ define("meg/templates/layouts/landing-page", ["exports"], function (exports) {
     return {
       meta: {
         "fragmentReason": {
-          "name": "missing-wrapper",
-          "problems": ["multiple-nodes", "wrong-type"]
+          "name": "triple-curlies"
         },
         "revision": "Ember@2.5.1",
         "loc": {
@@ -11847,8 +11846,8 @@ define("meg/templates/layouts/landing-page", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 10,
-            "column": 0
+            "line": 12,
+            "column": 6
           }
         },
         "moduleName": "meg/templates/layouts/landing-page.hbs"
@@ -11860,40 +11859,53 @@ define("meg/templates/layouts/landing-page", ["exports"], function (exports) {
       buildFragment: function buildFragment(dom) {
         var el0 = dom.createDocumentFragment();
         var el1 = dom.createElement("div");
-        dom.setAttribute(el1, "id", "top");
-        dom.setAttribute(el1, "class", "top landing-page");
-        var el2 = dom.createTextNode("\n  ");
+        dom.setAttribute(el1, "class", "wrapper");
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "id", "top");
+        dom.setAttribute(el2, "class", "top landing-page");
+        var el3 = dom.createTextNode("\n      ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n    ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n    \n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2, "class", "main");
+        var el3 = dom.createTextNode("\n        ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n    ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n    \n    ");
         dom.appendChild(el1, el2);
         var el2 = dom.createComment("");
         dom.appendChild(el1, el2);
         var el2 = dom.createTextNode("\n");
         dom.appendChild(el1, el2);
         dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n\n");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createComment("");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n\n");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createComment("");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n\n");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createComment("");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
         return el0;
       },
       buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element0 = dom.childAt(fragment, [0]);
         var morphs = new Array(4);
-        morphs[0] = dom.createMorphAt(dom.childAt(fragment, [0]), 1, 1);
-        morphs[1] = dom.createMorphAt(fragment, 2, 2, contextualElement);
-        morphs[2] = dom.createMorphAt(fragment, 4, 4, contextualElement);
-        morphs[3] = dom.createMorphAt(fragment, 6, 6, contextualElement);
+        morphs[0] = dom.createMorphAt(dom.childAt(element0, [1]), 1, 1);
+        morphs[1] = dom.createMorphAt(element0, 3, 3);
+        morphs[2] = dom.createMorphAt(dom.childAt(element0, [5]), 1, 1);
+        morphs[3] = dom.createMorphAt(element0, 7, 7);
         return morphs;
       },
-      statements: [["inline", "render", ["top"], [], ["loc", [null, [2, 2], [2, 18]]]], ["content", "flash-display", ["loc", [null, [5, 0], [5, 17]]]], ["content", "yield", ["loc", [null, [7, 0], [7, 9]]]], ["inline", "render", ["footer"], [], ["loc", [null, [9, 0], [9, 19]]]]],
+      statements: [["inline", "render", ["top"], [], ["loc", [null, [3, 6], [3, 22]]]], ["content", "flash-display", ["loc", [null, [6, 4], [6, 21]]]], ["content", "yield", ["loc", [null, [8, 8], [8, 17]]]], ["inline", "render", ["footer"], [], ["loc", [null, [11, 4], [11, 23]]]]],
       locals: [],
       templates: []
     };
@@ -12016,8 +12028,7 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
     return {
       meta: {
         "fragmentReason": {
-          "name": "missing-wrapper",
-          "problems": ["multiple-nodes", "wrong-type"]
+          "name": "triple-curlies"
         },
         "revision": "Ember@2.5.1",
         "loc": {
@@ -12027,8 +12038,8 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 17,
-            "column": 0
+            "line": 18,
+            "column": 6
           }
         },
         "moduleName": "meg/templates/layouts/simple.hbs"
@@ -12077,24 +12088,22 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
         var el3 = dom.createTextNode("\n  ");
         dom.appendChild(el2, el3);
         dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("\n");
-        dom.appendChild(el1, el2);
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createComment("");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
-        dom.appendChild(el0, el1);
-        var el1 = dom.createElement("footer");
-        var el2 = dom.createTextNode("\n  ");
+        var el2 = dom.createTextNode("\n  \n  ");
         dom.appendChild(el1, el2);
         var el2 = dom.createComment("");
         dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n  \n  ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("footer");
+        var el3 = dom.createTextNode("\n    ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n  ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
         var el2 = dom.createTextNode("\n");
         dom.appendChild(el1, el2);
-        dom.appendChild(el0, el1);
-        var el1 = dom.createTextNode("\n");
         dom.appendChild(el0, el1);
         return el0;
       },
@@ -12105,11 +12114,11 @@ define("meg/templates/layouts/simple", ["exports"], function (exports) {
         morphs[0] = dom.createMorphAt(dom.childAt(element0, [1]), 1, 1);
         morphs[1] = dom.createMorphAt(element1, 1, 1);
         morphs[2] = dom.createMorphAt(dom.childAt(element1, [3]), 1, 1);
-        morphs[3] = dom.createMorphAt(fragment, 2, 2, contextualElement);
-        morphs[4] = dom.createMorphAt(dom.childAt(fragment, [4]), 1, 1);
+        morphs[3] = dom.createMorphAt(element0, 5, 5);
+        morphs[4] = dom.createMorphAt(dom.childAt(element0, [7]), 1, 1);
         return morphs;
       },
-      statements: [["inline", "render", ["top"], [], ["loc", [null, [3, 4], [3, 20]]]], ["content", "flash-display", ["loc", [null, [7, 4], [7, 21]]]], ["content", "yield", ["loc", [null, [9, 6], [9, 15]]]], ["inline", "notification-container", [], ["notifications", ["subexpr", "@mut", [["get", "notifications", ["loc", [null, [13, 39], [13, 52]]]]], [], []], "position", "top-right"], ["loc", [null, [13, 0], [13, 75]]]], ["inline", "render", ["footer"], [], ["loc", [null, [15, 2], [15, 21]]]]],
+      statements: [["inline", "render", ["top"], [], ["loc", [null, [3, 4], [3, 20]]]], ["content", "flash-display", ["loc", [null, [7, 4], [7, 21]]]], ["content", "yield", ["loc", [null, [9, 6], [9, 15]]]], ["inline", "notification-container", [], ["notifications", ["subexpr", "@mut", [["get", "notifications", ["loc", [null, [13, 41], [13, 54]]]]], [], []], "position", "top-right"], ["loc", [null, [13, 2], [13, 77]]]], ["inline", "render", ["footer"], [], ["loc", [null, [16, 4], [16, 23]]]]],
       locals: [],
       templates: []
     };
@@ -13334,7 +13343,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
                   "column": 16
                 },
                 "end": {
-                  "line": 18,
+                  "line": 20,
                   "column": 16
                 }
               },
@@ -13349,12 +13358,19 @@ define("meg/templates/signup", ["exports"], function (exports) {
               var el1 = dom.createTextNode("                  ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("button");
-              dom.setAttribute(el1, "class", "button");
-              var el2 = dom.createElement("img");
-              dom.setAttribute(el2, "src", "../images/landing-page/sign-in-mascot.svg");
-              dom.setAttribute(el2, "class", "sign-in-mascot");
+              dom.setAttribute(el1, "class", "btn waves-effect waves-light mainColor");
+              var el2 = dom.createTextNode("\n                    ");
               dom.appendChild(el1, el2);
               var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode(" ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("i");
+              dom.setAttribute(el2, "class", "material-icons right");
+              var el3 = dom.createTextNode("input");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                  ");
               dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
               var el1 = dom.createTextNode("\n");
@@ -13368,7 +13384,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
               morphs[1] = dom.createMorphAt(element0, 1, 1);
               return morphs;
             },
-            statements: [["element", "action", ["createAccount"], [], ["loc", [null, [17, 26], [17, 53]]]], ["inline", "t", ["signup.create"], [], ["loc", [null, [17, 145], [17, 166]]]]],
+            statements: [["element", "action", ["createAccount"], [], ["loc", [null, [17, 26], [17, 53]]]], ["inline", "t", ["signup.create"], [], ["loc", [null, [18, 20], [18, 41]]]]],
             locals: [],
             templates: []
           };
@@ -13381,11 +13397,11 @@ define("meg/templates/signup", ["exports"], function (exports) {
               "loc": {
                 "source": null,
                 "start": {
-                  "line": 19,
+                  "line": 21,
                   "column": 16
                 },
                 "end": {
-                  "line": 21,
+                  "line": 25,
                   "column": 16
                 }
               },
@@ -13400,17 +13416,17 @@ define("meg/templates/signup", ["exports"], function (exports) {
               var el1 = dom.createTextNode("                  ");
               dom.appendChild(el0, el1);
               var el1 = dom.createElement("button");
-              dom.setAttribute(el1, "class", "button");
-              var el2 = dom.createElement("span");
-              dom.setAttribute(el2, "class", "loading-indicator--white");
-              var el3 = dom.createElement("i");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createElement("i");
-              dom.appendChild(el2, el3);
-              var el3 = dom.createElement("i");
-              dom.appendChild(el2, el3);
+              dom.setAttribute(el1, "class", "btn waves-effect waves-light mainColor");
+              var el2 = dom.createTextNode("\n                  ");
               dom.appendChild(el1, el2);
               var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode(" ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("i");
+              dom.setAttribute(el2, "class", "fa fa-circle-o-notch fa-spin");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                  ");
               dom.appendChild(el1, el2);
               dom.appendChild(el0, el1);
               var el1 = dom.createTextNode("\n");
@@ -13422,7 +13438,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
               morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1]), 1, 1);
               return morphs;
             },
-            statements: [["inline", "t", ["signup.onboarding"], [], ["loc", [null, [20, 108], [20, 133]]]]],
+            statements: [["inline", "t", ["signup.onboarding"], [], ["loc", [null, [23, 18], [23, 43]]]]],
             locals: [],
             templates: []
           };
@@ -13438,7 +13454,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
                 "column": 12
               },
               "end": {
-                "line": 27,
+                "line": 31,
                 "column": 12
               }
             },
@@ -13482,7 +13498,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             dom.appendChild(el0, el1);
             var el1 = dom.createElement("p");
             dom.setAttribute(el1, "class", "change_link");
-            var el2 = dom.createTextNode("\n                Already a member ?\n                ");
+            var el2 = dom.createTextNode("\n                Already a member?\n                ");
             dom.appendChild(el1, el2);
             var el2 = dom.createElement("button");
             dom.setAttribute(el2, "class", "signed-out button--signin");
@@ -13510,7 +13526,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             morphs[7] = dom.createMorphAt(element2, 0, 0);
             return morphs;
           },
-          statements: [["inline", "em-input", [], ["property", "name", "label", "Full Name", "placeholder", "Enter a name...", "type", "text"], ["loc", [null, [10, 14], [10, 102]]]], ["inline", "em-input", [], ["property", "email", "label", "email", "placeholder", "Enter a email...", "type", "text"], ["loc", [null, [11, 14], [11, 100]]]], ["inline", "em-input", [], ["label", "Password", "property", "password", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [13, 39], [13, 51]]]]], [], []]], ["loc", [null, [12, 14], [13, 53]]]], ["inline", "em-input", [], ["label", "Password", "property", "passwordConfirmation", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [14, 129], [14, 141]]]]], [], []]], ["loc", [null, [14, 14], [14, 143]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [16, 22], [16, 36]]]]], [], 0, null, ["loc", [null, [16, 16], [18, 23]]]], ["block", "if", [["get", "auth.signingIn", ["loc", [null, [19, 22], [19, 36]]]]], [], 1, null, ["loc", [null, [19, 16], [21, 23]]]], ["element", "action", ["signinPage"], [], ["loc", [null, [25, 58], [25, 82]]]], ["inline", "t", ["signup.signin"], [], ["loc", [null, [25, 83], [25, 104]]]]],
+          statements: [["inline", "em-input", [], ["property", "name", "label", "Full Name", "placeholder", "Enter a name...", "type", "text"], ["loc", [null, [10, 14], [10, 102]]]], ["inline", "em-input", [], ["property", "email", "label", "email", "placeholder", "Enter a email...", "type", "text"], ["loc", [null, [11, 14], [11, 100]]]], ["inline", "em-input", [], ["label", "Password", "property", "password", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [13, 39], [13, 51]]]]], [], []]], ["loc", [null, [12, 14], [13, 53]]]], ["inline", "em-input", [], ["label", "Password", "property", "passwordConfirmation", "placeholder", "And password...", "type", "password", "disabled", ["subexpr", "@mut", [["get", "nameHasValue", ["loc", [null, [14, 129], [14, 141]]]]], [], []]], ["loc", [null, [14, 14], [14, 143]]]], ["block", "if", [["get", "auth.signedOut", ["loc", [null, [16, 22], [16, 36]]]]], [], 0, null, ["loc", [null, [16, 16], [20, 23]]]], ["block", "if", [["get", "auth.signingIn", ["loc", [null, [21, 22], [21, 36]]]]], [], 1, null, ["loc", [null, [21, 16], [25, 23]]]], ["element", "action", ["signinPage"], [], ["loc", [null, [29, 58], [29, 82]]]], ["inline", "t", ["signup.signin"], [], ["loc", [null, [29, 83], [29, 104]]]]],
           locals: [],
           templates: [child0, child1]
         };
@@ -13529,7 +13545,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
               "column": 0
             },
             "end": {
-              "line": 36,
+              "line": 40,
               "column": 0
             }
           },
@@ -13593,7 +13609,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
           dom.insertBoundary(fragment, 0);
           return morphs;
         },
-        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 8], [2, 18]]]]], [], 0, null, ["loc", [null, [2, 2], [3, 9]]]], ["block", "em-form", [], ["model", ["subexpr", "@mut", [["get", "model", ["loc", [null, [9, 29], [9, 34]]]]], [], []], "form_layout", "horizontal", "submit_button", false], 1, null, ["loc", [null, [9, 12], [27, 24]]]]],
+        statements: [["block", "if", [["get", "redirected", ["loc", [null, [2, 8], [2, 18]]]]], [], 0, null, ["loc", [null, [2, 2], [3, 9]]]], ["block", "em-form", [], ["model", ["subexpr", "@mut", [["get", "model", ["loc", [null, [9, 29], [9, 34]]]]], [], []], "form_layout", "horizontal", "submit_button", false], 1, null, ["loc", [null, [9, 12], [31, 24]]]]],
         locals: [],
         templates: [child0, child1]
       };
@@ -13612,7 +13628,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 37,
+            "line": 41,
             "column": 0
           }
         },
@@ -13635,7 +13651,7 @@ define("meg/templates/signup", ["exports"], function (exports) {
         dom.insertBoundary(fragment, null);
         return morphs;
       },
-      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [36, 15]]]]],
+      statements: [["block", "meg-layout", [], ["layoutName", "layouts/simple"], 0, null, ["loc", [null, [1, 0], [40, 15]]]]],
       locals: [],
       templates: [child0]
     };
@@ -15264,207 +15280,6 @@ define("meg/templates/step3", ["exports"], function (exports) {
 });
 define("meg/templates/top", ["exports"], function (exports) {
   exports["default"] = Ember.HTMLBars.template((function () {
-    var child0 = (function () {
-      return {
-        meta: {
-          "fragmentReason": false,
-          "revision": "Ember@2.5.1",
-          "loc": {
-            "source": null,
-            "start": {
-              "line": 2,
-              "column": 0
-            },
-            "end": {
-              "line": 39,
-              "column": 0
-            }
-          },
-          "moduleName": "meg/templates/top.hbs"
-        },
-        isEmpty: false,
-        arity: 0,
-        cachedFragment: null,
-        hasRendered: false,
-        buildFragment: function buildFragment(dom) {
-          var el0 = dom.createDocumentFragment();
-          var el1 = dom.createTextNode("            ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("li");
-          dom.setAttribute(el1, "class", "gn-trigger");
-          var el2 = dom.createTextNode("\n                ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("a");
-          dom.setAttribute(el2, "class", "gn-icon gn-icon-menu");
-          var el3 = dom.createElement("span");
-          var el4 = dom.createTextNode("Menu");
-          dom.appendChild(el3, el4);
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n                ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("div");
-          dom.setAttribute(el2, "class", "gn-menu-wrapper");
-          var el3 = dom.createTextNode("\n                    ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createElement("div");
-          dom.setAttribute(el3, "class", "gn-scroller");
-          var el4 = dom.createTextNode("\n                        ");
-          dom.appendChild(el3, el4);
-          var el4 = dom.createElement("ul");
-          dom.setAttribute(el4, "class", "gn-menu");
-          var el5 = dom.createTextNode("\n                            ");
-          dom.appendChild(el4, el5);
-          var el5 = dom.createElement("li");
-          var el6 = dom.createTextNode("\n                                ");
-          dom.appendChild(el5, el6);
-          var el6 = dom.createElement("a");
-          dom.setAttribute(el6, "href", "market-place.php");
-          var el7 = dom.createElement("i");
-          dom.setAttribute(el7, "class", "fa fa-tachometer");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode(" ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          var el8 = dom.createTextNode("Dashboard");
-          dom.appendChild(el7, el8);
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode("\n                                ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          dom.setAttribute(el7, "class", "selected hidden-xs");
-          dom.appendChild(el6, el7);
-          dom.appendChild(el5, el6);
-          var el6 = dom.createTextNode("\n                            ");
-          dom.appendChild(el5, el6);
-          dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n                            ");
-          dom.appendChild(el4, el5);
-          var el5 = dom.createElement("li");
-          var el6 = dom.createTextNode("\n                                ");
-          dom.appendChild(el5, el6);
-          var el6 = dom.createElement("a");
-          dom.setAttribute(el6, "href", "app.php");
-          var el7 = dom.createElement("i");
-          dom.setAttribute(el7, "class", "fa fa-tasks");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode("\n                                ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          var el8 = dom.createTextNode("Apps");
-          dom.appendChild(el7, el8);
-          dom.appendChild(el6, el7);
-          dom.appendChild(el5, el6);
-          var el6 = dom.createTextNode("\n                            ");
-          dom.appendChild(el5, el6);
-          dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n                            ");
-          dom.appendChild(el4, el5);
-          var el5 = dom.createElement("li");
-          var el6 = dom.createTextNode("\n                                ");
-          dom.appendChild(el5, el6);
-          var el6 = dom.createElement("a");
-          dom.setAttribute(el6, "href", "vm-overview.php");
-          var el7 = dom.createElement("i");
-          dom.setAttribute(el7, "class", "fa fa-bar-chart");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode(" ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          var el8 = dom.createTextNode("Virtual\n                                Machines");
-          dom.appendChild(el7, el8);
-          dom.appendChild(el6, el7);
-          dom.appendChild(el5, el6);
-          var el6 = dom.createTextNode("\n                            ");
-          dom.appendChild(el5, el6);
-          dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n                            ");
-          dom.appendChild(el4, el5);
-          var el5 = dom.createElement("li");
-          dom.setAttribute(el5, "class", "start active");
-          var el6 = dom.createTextNode("\n                                ");
-          dom.appendChild(el5, el6);
-          var el6 = dom.createElement("a");
-          dom.setAttribute(el6, "href", "cloud-settings.php");
-          var el7 = dom.createElement("i");
-          dom.setAttribute(el7, "class", "fa fa-key");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode("\n                                ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          var el8 = dom.createTextNode("SSH Keys");
-          dom.appendChild(el7, el8);
-          dom.appendChild(el6, el7);
-          dom.appendChild(el5, el6);
-          var el6 = dom.createTextNode("\n                            ");
-          dom.appendChild(el5, el6);
-          dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n                            ");
-          dom.appendChild(el4, el5);
-          var el5 = dom.createElement("li");
-          var el6 = dom.createTextNode("\n                                ");
-          dom.appendChild(el5, el6);
-          var el6 = dom.createElement("a");
-          dom.setAttribute(el6, "href", "billing.php");
-          var el7 = dom.createElement("i");
-          dom.setAttribute(el7, "class", "fa fa-money");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode(" ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          var el8 = dom.createTextNode("Billing");
-          dom.appendChild(el7, el8);
-          dom.appendChild(el6, el7);
-          var el7 = dom.createTextNode("\n                                ");
-          dom.appendChild(el6, el7);
-          var el7 = dom.createElement("span");
-          dom.setAttribute(el7, "class", "selected hidden-xs");
-          dom.appendChild(el6, el7);
-          dom.appendChild(el5, el6);
-          var el6 = dom.createTextNode("\n                            ");
-          dom.appendChild(el5, el6);
-          dom.appendChild(el4, el5);
-          var el5 = dom.createTextNode("\n                        ");
-          dom.appendChild(el4, el5);
-          dom.appendChild(el3, el4);
-          var el4 = dom.createTextNode("\n                    ");
-          dom.appendChild(el3, el4);
-          dom.appendChild(el2, el3);
-          var el3 = dom.createComment(" /gn-scroller ");
-          dom.appendChild(el2, el3);
-          var el3 = dom.createTextNode("\n                ");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n            ");
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n            ");
-          dom.appendChild(el0, el1);
-          var el1 = dom.createElement("li");
-          var el2 = dom.createTextNode("\n                ");
-          dom.appendChild(el1, el2);
-          var el2 = dom.createElement("a");
-          dom.setAttribute(el2, "class", "codrops-icon codrops-icon-prev add-new");
-          dom.setAttribute(el2, "href", "#new-modal");
-          var el3 = dom.createElement("i");
-          dom.setAttribute(el3, "class", "fa fa-plus");
-          dom.appendChild(el2, el3);
-          dom.appendChild(el1, el2);
-          var el2 = dom.createTextNode("\n            ");
-          dom.appendChild(el1, el2);
-          dom.appendChild(el0, el1);
-          var el1 = dom.createTextNode("\n");
-          dom.appendChild(el0, el1);
-          return el0;
-        },
-        buildRenderNodes: function buildRenderNodes() {
-          return [];
-        },
-        statements: [],
-        locals: [],
-        templates: []
-      };
-    })();
     return {
       meta: {
         "fragmentReason": {
@@ -15479,7 +15294,7 @@ define("meg/templates/top", ["exports"], function (exports) {
             "column": 0
           },
           "end": {
-            "line": 101,
+            "line": 99,
             "column": 0
           }
         },
@@ -15494,11 +15309,172 @@ define("meg/templates/top", ["exports"], function (exports) {
         var el1 = dom.createElement("ul");
         dom.setAttribute(el1, "class", "gn-menu-main no-touch");
         dom.setAttribute(el1, "id", "gn-menu");
-        var el2 = dom.createTextNode("\n");
+        var el2 = dom.createTextNode("\n            ");
         dom.appendChild(el1, el2);
-        var el2 = dom.createComment("");
+        var el2 = dom.createElement("li");
+        dom.setAttribute(el2, "class", "gn-trigger");
+        var el3 = dom.createTextNode("\n                ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("a");
+        dom.setAttribute(el3, "class", "gn-icon gn-icon-menu");
+        var el4 = dom.createElement("span");
+        var el5 = dom.createTextNode("Menu");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n                ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("div");
+        dom.setAttribute(el3, "class", "gn-menu-wrapper");
+        var el4 = dom.createTextNode("\n                    ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createElement("div");
+        dom.setAttribute(el4, "class", "gn-scroller");
+        var el5 = dom.createTextNode("\n                        ");
+        dom.appendChild(el4, el5);
+        var el5 = dom.createElement("ul");
+        dom.setAttribute(el5, "class", "gn-menu");
+        var el6 = dom.createTextNode("\n                            ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("li");
+        var el7 = dom.createTextNode("\n                                ");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createElement("a");
+        dom.setAttribute(el7, "href", "market-place.php");
+        var el8 = dom.createElement("i");
+        dom.setAttribute(el8, "class", "fa fa-tachometer");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode(" ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        var el9 = dom.createTextNode("Dashboard");
+        dom.appendChild(el8, el9);
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode("\n                                ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        dom.setAttribute(el8, "class", "selected hidden-xs");
+        dom.appendChild(el7, el8);
+        dom.appendChild(el6, el7);
+        var el7 = dom.createTextNode("\n                            ");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                            ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("li");
+        var el7 = dom.createTextNode("\n                                ");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createElement("a");
+        dom.setAttribute(el7, "href", "app.php");
+        var el8 = dom.createElement("i");
+        dom.setAttribute(el8, "class", "fa fa-tasks");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode("\n                                ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        var el9 = dom.createTextNode("Apps");
+        dom.appendChild(el8, el9);
+        dom.appendChild(el7, el8);
+        dom.appendChild(el6, el7);
+        var el7 = dom.createTextNode("\n                            ");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                            ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("li");
+        var el7 = dom.createTextNode("\n                                ");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createElement("a");
+        dom.setAttribute(el7, "href", "vm-overview.php");
+        var el8 = dom.createElement("i");
+        dom.setAttribute(el8, "class", "fa fa-bar-chart");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode(" ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        var el9 = dom.createTextNode("Virtual\n                                Machines");
+        dom.appendChild(el8, el9);
+        dom.appendChild(el7, el8);
+        dom.appendChild(el6, el7);
+        var el7 = dom.createTextNode("\n                            ");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                            ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("li");
+        dom.setAttribute(el6, "class", "start active");
+        var el7 = dom.createTextNode("\n                                ");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createElement("a");
+        dom.setAttribute(el7, "href", "cloud-settings.php");
+        var el8 = dom.createElement("i");
+        dom.setAttribute(el8, "class", "fa fa-key");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode("\n                                ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        var el9 = dom.createTextNode("SSH Keys");
+        dom.appendChild(el8, el9);
+        dom.appendChild(el7, el8);
+        dom.appendChild(el6, el7);
+        var el7 = dom.createTextNode("\n                            ");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                            ");
+        dom.appendChild(el5, el6);
+        var el6 = dom.createElement("li");
+        var el7 = dom.createTextNode("\n                                ");
+        dom.appendChild(el6, el7);
+        var el7 = dom.createElement("a");
+        dom.setAttribute(el7, "href", "billing.php");
+        var el8 = dom.createElement("i");
+        dom.setAttribute(el8, "class", "fa fa-money");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode(" ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        var el9 = dom.createTextNode("Billing");
+        dom.appendChild(el8, el9);
+        dom.appendChild(el7, el8);
+        var el8 = dom.createTextNode("\n                                ");
+        dom.appendChild(el7, el8);
+        var el8 = dom.createElement("span");
+        dom.setAttribute(el8, "class", "selected hidden-xs");
+        dom.appendChild(el7, el8);
+        dom.appendChild(el6, el7);
+        var el7 = dom.createTextNode("\n                            ");
+        dom.appendChild(el6, el7);
+        dom.appendChild(el5, el6);
+        var el6 = dom.createTextNode("\n                        ");
+        dom.appendChild(el5, el6);
+        dom.appendChild(el4, el5);
+        var el5 = dom.createTextNode("\n                    ");
+        dom.appendChild(el4, el5);
+        dom.appendChild(el3, el4);
+        var el4 = dom.createComment(" /gn-scroller ");
+        dom.appendChild(el3, el4);
+        var el4 = dom.createTextNode("\n                ");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
         dom.appendChild(el1, el2);
-        var el2 = dom.createTextNode("  ");
+        var el2 = dom.createTextNode("\n            ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("li");
+        var el3 = dom.createTextNode("\n                ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createElement("a");
+        dom.setAttribute(el3, "class", "codrops-icon codrops-icon-prev add-new");
+        dom.setAttribute(el3, "href", "#new-modal");
+        var el4 = dom.createElement("i");
+        dom.setAttribute(el4, "class", "fa fa-plus");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n            ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n  ");
         dom.appendChild(el1, el2);
         var el2 = dom.createElement("div");
         dom.setAttribute(el2, "class", "container");
@@ -15779,14 +15755,12 @@ define("meg/templates/top", ["exports"], function (exports) {
         dom.appendChild(el0, el1);
         return el0;
       },
-      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
-        var morphs = new Array(1);
-        morphs[0] = dom.createMorphAt(dom.childAt(fragment, [0]), 1, 1);
-        return morphs;
+      buildRenderNodes: function buildRenderNodes() {
+        return [];
       },
-      statements: [["block", "if", [["get", "auth.signedIn", ["loc", [null, [2, 6], [2, 19]]]]], [], 0, null, ["loc", [null, [2, 0], [39, 7]]]]],
+      statements: [],
       locals: [],
-      templates: [child0]
+      templates: []
     };
   })());
 });
@@ -16433,7 +16407,7 @@ catch(err) {
 /* jshint ignore:start */
 
 if (!runningTests) {
-  require("meg/app")["default"].create({"LOG_ACTIVE_GENERATION":true,"LOG_TRANSITIONS":true,"LOG_TRANSITIONS_INTERNAL":true,"LOG_VIEW_LOOKUPS":true,"name":"meg","version":"0.0.0+5b03d3a0"});
+  require("meg/app")["default"].create({"LOG_ACTIVE_GENERATION":true,"LOG_TRANSITIONS":true,"LOG_TRANSITIONS_INTERNAL":true,"LOG_VIEW_LOOKUPS":true,"name":"meg","version":"0.0.0+f98b9013"});
 }
 
 /* jshint ignore:end */
