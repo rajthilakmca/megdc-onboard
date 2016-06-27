@@ -11,7 +11,8 @@
     "hammer.js": "^2.0.8",
     "matchMedia": "0.2.0",
     "validator-js": "3.39.0",
-    "font-awesome": "~4.6.3"
+    "font-awesome": "~4.6.3",
+    "validator-js": "3.39.0"
   },
   "devDependencies": {
     "bootstrap": "~3.3.6",

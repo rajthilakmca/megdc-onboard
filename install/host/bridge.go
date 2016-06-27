@@ -2,7 +2,7 @@ package host
 
 import (
    "github.com/megamsys/megdcui/install"
-  "github.com/megamsys/megdc/handler"
+  "github.com/megamsys/megdcui/handler"
 )
 
 var BRIDGE = []string{"CreateBridge"}

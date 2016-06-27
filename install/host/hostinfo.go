@@ -1,7 +1,7 @@
 package host
 
 import (
-  "github.com/megamsys/megdc/handler"
+  "github.com/megamsys/megdcui/handler"
   "github.com/megamsys/megdcui/install"
   )
 
