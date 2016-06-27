@@ -8,7 +8,6 @@
         <div id="wrapper">
           <div id="login" class="form">
             {{#em-form model=model form_layout='horizontal' submit_button=false}}
-<<<<<<< HEAD
             {{em-input property="email" label="email" placeholder="Enter a email..." type="text"}}
             {{em-input label="Password" property="password" placeholder="And password..." type="password" disabled=nameHasValue}}
               <div class="form-actions">
@@ -16,15 +15,6 @@
                   <button {{ action "LoginAccount" }} class="btn waves-effect waves-light mainColor">{{t "login.messages.sign_in"}}
                     <i class="material-icons right">exit_to_app</i>
                   </button>
-=======
-
-              {{em-input property="email" label="email" placeholder="Enter a email..." type="text"}} {{em-input label="Password" property="password" placeholder="And password..." type="password" disabled=nameHasValue}}
-              <div class="form-actions">
-                <!--<input  disabled={{isntValid}} type="submit" class="btn btn-success" value="Login">-->
-
-                <button {{ action "LoginAccount" }} class="button"><img src="../images/landing-page/sign-in-mascot.svg" class="sign-in-mascot">{{t "login.messages.sign_in"}}</button>
-
->>>>>>> d97ab39b9d8eb5bcb2a1f13d82627c7236ed64bb
                 {{#if errorMessage}}
                   <div class="alert alert-danger form-signin-alert" role="alert">{{t 'login.messages.error'}} </div>
                 {{/if}}
